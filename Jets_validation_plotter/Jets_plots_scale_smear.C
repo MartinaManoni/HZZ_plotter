@@ -12,7 +12,8 @@ void DrawRatioPlot(string name, string var_name, TCanvas *c, TH1D *data, TH1D *M
         // Normalize MC to data
         double dataIntegral = data->Integral();
         double mcIntegral = MC->Integral();
-        double scaleFactor = dataIntegral / mcIntegral;
+        //double scaleFactor = dataIntegral / mcIntegral;
+        double scaleFactor = 1.0;
         MC->Scale(scaleFactor);
         MCUp->Scale(scaleFactor);
         MCDn->Scale(scaleFactor);
@@ -201,21 +202,22 @@ tuple<ROOT::RDF::RResultPtr<TH1D>, ROOT::RDF::RResultPtr<TH1D>, ROOT::RDF::RResu
     // Step 1: Apply Jets filters
     auto sorted_rdf = rdf
         .Define("Horn_Cut", 
-        "((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50)") 
+        "((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50)")
+
         .Define("Jet_Mask", 
-        "(Jet_pt > 30) && (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false")
+        "(Jet_pt > 30) && Horn_Cut && (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false")
         
         .Define("Jet_Mask_scaleUp", 
-        "(Jet_scaleUp_pt > 30) && (Jet_jetId == 6 || Jet_jetId == 2) && ((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_scaleUp_pt > 50) && Jet_ZZMask == false")
+        "(Jet_scaleUp_pt > 30) && Horn_Cut &&  (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false")
         
         .Define("Jet_Mask_scaleDown", 
-        "(Jet_scaleDn_pt > 30) && (Jet_jetId == 6 || Jet_jetId == 2) && ((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_scaleDn_pt > 50) && Jet_ZZMask == false") 
+        "(Jet_scaleDn_pt > 30) && Horn_Cut &&  (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false") 
         
         .Define("Jet_Mask_smearUp", 
-        "(Jet_smearUp_pt > 30) && (Jet_jetId == 6 || Jet_jetId == 2) && ((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_smearUp_pt > 50) && Jet_ZZMask == false") 
+        "(Jet_smearUp_pt > 30) && Horn_Cut &&  (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false") 
         
         .Define("Jet_Mask_smearDown", 
-        "(Jet_smearDn_pt > 30) && (Jet_jetId == 6 || Jet_jetId == 2) && ((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_smearDn_pt > 50) && Jet_ZZMask == false") 
+        "(Jet_smearDn_pt > 30) && Horn_Cut &&  (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false") 
         
         .Define("FilteredJet_eta", "Jet_eta[Jet_Mask]")
         .Define("FilteredJet_pt", "Jet_pt[Jet_Mask]")
@@ -238,11 +240,9 @@ tuple<ROOT::RDF::RResultPtr<TH1D>, ROOT::RDF::RResultPtr<TH1D>, ROOT::RDF::RResu
         .Define("SortedJet_smearDn_pt", "FilteredJet_smearDn_pt[Reverse(Argsort(FilteredJet_pt))]")
         .Define("SortedJet_scaleUp_pt", "FilteredJet_scaleUp_pt[Reverse(Argsort(FilteredJet_pt))]")
         .Define("SortedJet_scaleDn_pt", "FilteredJet_scaleDn_pt[Reverse(Argsort(FilteredJet_pt))]");
-        //(abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50) //&& Jet_ZZMask == false// && Jet_ZZMask == false //|| Jet_jetId == 2 && Jet_ZZMask == false//((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50) &&
-        //((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50) &&
         
     // Step 2: Apply the event-level filter
-    auto skim_rdf = sorted_rdf.Filter("ZLCand_lepIdx >= 0 && SortedJet_eta.size() > 0 && Flag_JetVetoed == 0") //Z control region used (nZCand)
+    auto skim_rdf = sorted_rdf.Filter("nZCand >= 0 && SortedJet_eta.size() > 0 && Flag_JetVetoed == 0") //Z control region used (nZCand)
         .Define("weight", Form("1000 * overallEventWeight * %f / %f", _lumi, gen_sumWeights))
         .Define("leadEta", "SortedJet_eta.at(0)")
         .Define("leadPt", "SortedJet_pt.at(0)")
@@ -285,7 +285,7 @@ ROOT::RDF::RResultPtr<TH1D> Histo_Data(string fpath, string var, int bins, doubl
         .Define("Horn_Cut", 
         "((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50)") 
         .Define("Jet_Mask", 
-        "(Jet_pt > 30) && (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false") // ((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50)//&& Jet_ZZMask == false//|| Jet_jetId == 2 && Jet_ZZMask == false //((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50) && 
+        "(Jet_pt > 30) && Horn_Cut && (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false")
         .Define("FilteredJet_eta", "Jet_eta[Jet_Mask]")
         .Define("FilteredJet_pt", "Jet_pt[Jet_Mask]")
         .Define("FilteredJet_Njets", "FilteredJet_pt.size()")
@@ -294,7 +294,7 @@ ROOT::RDF::RResultPtr<TH1D> Histo_Data(string fpath, string var, int bins, doubl
         .Define("SortedJet_pt", "FilteredJet_pt[Reverse(Argsort(FilteredJet_pt))]");
 
     // Apply event-level filter and define leadEta and leadPt
-    auto skim_data = sorted_data.Filter("ZLCand_lepIdx >= 0 && SortedJet_eta.size() > 0 && Flag_JetVetoed == 0") //ZLCand_lepIdx nZCand
+    auto skim_data = sorted_data.Filter("nZCand >= 0 && SortedJet_eta.size() > 0 && Flag_JetVetoed == 0") //ZLCand_lepIdx nZCand
         .Define("leadEta", "SortedJet_eta.at(0)")
         .Define("leadPt", "SortedJet_pt.at(0)")
         .Define("leadNjets", "FilteredJet_Njets");
@@ -310,7 +310,7 @@ ROOT::RDF::RResultPtr<TH1D> Histo_Data(string fpath, string var, int bins, doubl
 void Jets_plots_scale_smear(){
   std::cout<<"Jets_plots_scale_smear"<<std::endl;
   ROOT::EnableImplicitMT();
-  std::string var = "leadEta";//"leadNjets";//"leadEta";//leadPt //leadchEmEF //leadEta //leadneEmEF //leadNJets
+  std::string var = "leadEta"; //"leadNjets";//"leadEta";//leadPt //leadchEmEF //leadEta //leadneEmEF //leadNJets
   std::string var_name = "#eta"; //"p_{T}";//"#eta"; ////Neutral Em Energy Fraction //charged Em Energy Fraction //Number of jets
   std::string period = "preEE2022"; //"preEE2022" "postBPix2023" "preBPix2023"
 
@@ -327,9 +327,9 @@ void Jets_plots_scale_smear(){
   std::tie(n_bins, min_val, max_val) = var_binning[var];
 
   std::cout<<"period preEE2022"<<std::endl;
-  std::string fTT   = "/eos/user/m/mmanoni/HZZ_samples22_newprod/MC_JetClean_Jes/PROD_samplesNano_2022_MC_3e5e00ec/TTto2L2Nu/ZZ4lAnalysis.root";
-  std::string fDY   = "/eos/user/m/mmanoni/HZZ_samples22_newprod/MC_JetClean_Jes/PROD_samplesNano_2022_MC_3e5e00ec/DYJetsToLL/ZZ4lAnalysis.root";
-  std::string fdata = "/eos/user/m/mmanoni/HZZ_samples22_newprod/Data_JetClean_Jes/PROD_samplesNano_2022_Data_3e5e00ec/Data_eraCD_preEE.root";
+  std::string fTT   = "/eos/user/m/mmanoni/HZZ_prod_70625_JERC_ok/MC/PROD_samplesNano_2022_MC_ff80e26d/TTto2L2Nu/ZZ4lAnalysis.root";
+  std::string fDY   = "/eos/user/m/mmanoni/HZZ_prod_70625_JERC_ok/MC/PROD_samplesNano_2022_MC_ff80e26d/DYJetsToLL/ZZ4lAnalysis.root";
+  std::string fdata = "/eos/user/m/mmanoni/HZZ_prod_70625_JERC_ok/Data/PROD_samplesNano_2022_Data_ff80e26d/Data_eraCD_preEE.root";
   double lumi  = 7.98;
 
   /*std::cout<<"period postEE2022"<<std::endl;
@@ -388,7 +388,7 @@ void Jets_plots_scale_smear(){
 
 
   std::cout << "Saving distributions into root file ..." << std::endl;
-  std::string filename = subdir + var +"_"+ period + "_scale_smear_Clean_NOHorncut_Norm_ZLCand_lepIdx.root";  // Concatenate the value of 'var' with the string
+  std::string filename = subdir + var +"_"+ period + "_scale_smear_prova_cut50GeV_NoNorm.root";  // Concatenate the value of 'var' with the string
   TFile *outfile = new TFile(filename.c_str(), "RECREATE");
 
   outfile    -> cd();
@@ -402,7 +402,7 @@ void Jets_plots_scale_smear(){
   
 
   TCanvas * canvas = new TCanvas();
-  std::string filename_plots = subdir + var +"_"+ period + "_plots_scale_smear_Clean_NOHorncut_Norm_ZLCand_lepIdx";
+  std::string filename_plots = subdir + var +"_"+ period + "_plots_scale_smear_prova_cut50GeV_NoNorm";
   DrawRatioPlot(filename_plots, var_name, canvas,
                 hist_data.GetPtr(),
                 hist_DY.GetPtr(), hist_DY_up.GetPtr(), hist_DY_dn.GetPtr(), hist_DY_up_scale.GetPtr(), hist_DY_dn_scale.GetPtr(),
