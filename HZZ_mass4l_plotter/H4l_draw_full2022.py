@@ -140,7 +140,7 @@ def printCanvas(c, type="png", name=None, path="." ) :
 
 
 ######################
-def Stack(f2022, f2022EE, version = "_4GeV_", finalState = 'fs_4l'):
+def Stack(f2022, f2022EE, varaible="ZZmass", version = "", finalState = 'fs_4l'):
     print("Stacking")
     # final state
     if(finalState == 'fs_4e'):
@@ -155,8 +155,8 @@ def Stack(f2022, f2022EE, version = "_4GeV_", finalState = 'fs_4l'):
         raise ValueError('Error: wrong final state!')
 
     # define histo name
-    name = "ZZMass" + version + fs_string
-    print('hist name: ', name)
+    name = variable + (version if variable == "ZZMass" else "") + "_" + fs_string + "Data"
+    print(f"[Stack] Using histogram base name: {name}")
 
     
     #------------EW------------------#
@@ -283,12 +283,15 @@ def Stack(f2022, f2022EE, version = "_4GeV_", finalState = 'fs_4l'):
     
     
     #------------------Stack----------#
-    if version=="_4GeV_" :
-        hs = ROOT.THStack("Stack_4GeV", "; m_{#it{4l}} (GeV) ; Events / 4 GeV" )
-    elif version=="_10GeV_" :
-        hs = ROOT.THStack("Stack_10GeV", "; m_{#it{4l}} (GeV) ; Events / 10 GeV" )
+    if varaible == "ZZmass"
+        if version=="_4GeV_" :
+            hs = ROOT.THStack("Stack_4GeV", "; m_{#it{4l}} (GeV) ; Events / 4 GeV" )
+        elif version=="_10GeV_" :
+            hs = ROOT.THStack("Stack_10GeV", "; m_{#it{4l}} (GeV) ; Events / 10 GeV" )
+        else:
+            hs = ROOT.THStack("Stack_2GeV", "; m_{#it{4l}} (GeV) ; Events / 2 GeV" )
     else:
-        hs = ROOT.THStack("Stack_2GeV", "; m_{#it{4l}} (GeV) ; Events / 2 GeV" )
+        hs = ROOT.THStack(f"Stack_{variable}", f"; {variable} (GeV); Events")
 
     hs.Add(hzx,"HISTO")
     hs.Add(EW,"HISTO")
@@ -300,7 +303,7 @@ def Stack(f2022, f2022EE, version = "_4GeV_", finalState = 'fs_4l'):
 
 
 ### Get a TGraph for data, blinded if required
-def dataGraph (f1, f2, version = "_4GeV_", finalState = 'fs_4l', blind = True):
+def dataGraph (f1, f2, variable="ZZMass", version = "", finalState = 'fs_4l', blind = True):
 
     # final state
     if(finalState == 'fs_4e'):
@@ -315,7 +318,7 @@ def dataGraph (f1, f2, version = "_4GeV_", finalState = 'fs_4l', blind = True):
         raise ValueError('Error: wrong final state!')
 
     # define histo name
-    name = "ZZMass"+ version + fs_string
+    name = variable + (version if variable == "ZZMass" else "") + "_" + fs_string + "Data"
     print(name)
 
     hd1 = f1.Get(name+"Data")
@@ -372,70 +375,92 @@ if __name__ == "__main__" :
 
     ## --- plots     
     finalStates = ['fs_4e', 'fs_4mu', 'fs_2e2mu', 'fs_4l']
-    for fs in finalStates:
-        print(fs)
+    variables = ['ZZMass', 'Z1Mass', 'Z2Mass']
 
-        ### m4l plot - full range
-        HStack, h_list = Stack(fMC2022, fMC2022EE, '_4GeV_', fs)
-        HData = dataGraph(fData2022, fData2022EE,'_4GeV_', fs, blind=blindPlots)
-        HStack_hm = HStack.Clone()
-        HData_hm = HData.Clone()
-          
-        Canvas = ROOT.TCanvas("M4l_full2022_"+fs,"M4l_full2022_"+fs,canvasSizeX,canvasSizeY)
-        Canvas.SetTicks()
-        Canvas.SetLogx()
-        #ymaxd=HData.GetMaximum()
-        xmin=ctypes.c_double(0.)
-        ymin=ctypes.c_double(0.)
-        xmax=ctypes.c_double(0.)
-        ymax=ctypes.c_double(0.)
-        HData.ComputeRange(xmin,ymin,xmax,ymax)
-        yhmax=math.ceil(max(HStack.GetMaximum(), ymax.value))
-        HStack.SetMaximum(yhmax)
-        HStack.Draw("histo")
-        HStack.GetXaxis().SetRangeUser(70., 300.)
-        if blindPlots:
-            ROOT.gPad.GetRangeAxis(xmin,ymin,xmax,ymax)
-            bblind = ROOT.TBox(blindHLow, 0, blindHHi, ymax.value-epsilon)
-            bblind.SetFillColor(ROOT.kGray)
-            bblind.SetFillStyle(3002)
-            bblind.Draw()
-        HData.Draw("samePE1")
-        # Hide labels and rewrite them
-        HStack.GetXaxis().SetLabelSize(0)
-        for label in xlabels :
-            label.Draw()
-        ROOT.gPad.RedrawAxis()
-        
-        legend = ROOT.TLegend(0.72,0.70,0.94,0.92)
-        legend.AddEntry(HData,"Data", "p")
-        legend.AddEntry(h_list[4],"H(125)","f")
-        legend.AddEntry(h_list[3],"q#bar{q}#rightarrow ZZ,Z#gamma*","f")
-        legend.AddEntry(h_list[2],"gg#rightarrow ZZ,Z#gamma*","f")
-        legend.AddEntry(h_list[1],"EW","f")
-        legend.AddEntry(h_list[0],"Z+X","f")
-        legend.SetFillColor(ROOT.kWhite)
-        legend.SetLineColor(ROOT.kWhite)
-        legend.SetTextFont(43)
-        legend.SetTextSize(20)
-        legend.Draw()
-        
-        #draw CMS and lumi text
-        CMS_lumi.writeExtraText = True
-        CMS_lumi.extraText      = "Preliminary"
-        CMS_lumi.lumi_sqrtS     = r"34.65~\mathrm{fb}^{-1} (13.6 TeV)"
-        CMS_lumi.cmsTextSize    = 1 #0.6
-        CMS_lumi.lumiTextSize   = 0.7 #0.46
-        CMS_lumi.extraOverCmsTextSize = 0.75
-        CMS_lumi.relPosX = 0.12
-        CMS_lumi.CMS_lumi(Canvas, 0, 0)
-            
-        Canvas.Update() #very important!!!
-        Canvas.Draw()
-        Canvas.Write()
+    for fs in finalStates: 
+    print(f"\nProcessing final state: {fs}")
+    
+        for variable in variables:
+            # Only loop over versions for ZZMass
+            versions = ["_2GeV_", "_4GeV_", "_10GeV_"] if variable == "ZZMass" else [""]
+
+            for version in versions:
+                print(f"  Variable: {variable}, version: {version if version else 'no version'}")
+
+                # Load histograms
+            HStack_var, h_list_var = Stack(fMC2022, fMC2022EE, variable=variable, version=version, finalState=fs)
+            HData_var = dataGraph(fData2022, fData2022EE, variable=variable, version=version, finalState=fs, blind=(blindPlots and variable=="ZZMass"))
+
+            # Create canvas
+            canvas_name = f"{variable}{version}_full2022_{fs}".replace("__", "_")
+            Canvas = ROOT.TCanvas(canvas_name, canvas_name, canvasSizeX, canvasSizeY)
+            Canvas.SetTicks()
+            #if variable == "ZZMass":
+                #Canvas.SetLogx()
+
+            xmin = ctypes.c_double(0.)
+            ymin = ctypes.c_double(0.)
+            xmax = ctypes.c_double(0.)
+            ymax = ctypes.c_double(0.)
+            HData_var.ComputeRange(xmin, ymin, xmax, ymax)
+            HStack_var.SetMaximum(math.ceil(max(HStack_var.GetMaximum(), ymax.value)))
+            HStack_var.Draw("histo")
+
+            # Axis range (adjust if needed per variable)
+            if variable == "ZZMass":
+                HStack_var.GetXaxis().SetRangeUser(70., 300.)
+            elif variable in ["Z1Mass", "Z2Mass"]:
+                HStack_var.GetXaxis().SetRangeUser(0., 120.)
+
+            # Blinding only for ZZMass
+            if blindPlots and variable == "ZZMass":
+                ROOT.gPad.GetRangeAxis(xmin, ymin, xmax, ymax)
+                bblind = ROOT.TBox(blindHLow, 0, blindHHi, ymax.value - epsilon)
+                bblind.SetFillColor(ROOT.kGray)
+                bblind.SetFillStyle(3002)
+                bblind.Draw()
+
+            HData_var.Draw("samePE1")
+
+            # Axis label tweaks (only for ZZMass)
+            if variable == "ZZMass":
+                HStack_var.GetXaxis().SetLabelSize(0)
+                for label in xlabels:
+                    label.Draw()
+
+            ROOT.gPad.RedrawAxis()
+
+            # Legend
+            legend = ROOT.TLegend(0.72, 0.70, 0.94, 0.92)
+            legend.AddEntry(HData_var, "Data", "p")
+            legend.AddEntry(h_list_var[4], "H(125)", "f")
+            legend.AddEntry(h_list_var[3], "q#bar{q}→ZZ", "f")
+            legend.AddEntry(h_list_var[2], "gg→ZZ", "f")
+            legend.AddEntry(h_list_var[1], "EW", "f")
+            legend.AddEntry(h_list_var[0], "Z+X", "f")
+            legend.SetFillColor(ROOT.kWhite)
+            legend.SetLineColor(ROOT.kWhite)
+            legend.SetTextFont(43)
+            legend.SetTextSize(20)
+            legend.Draw()
+
+            # CMS / Lumi
+            CMS_lumi.writeExtraText = True
+            CMS_lumi.extraText      = "Preliminary"
+            CMS_lumi.lumi_sqrtS     = r"34.65~\mathrm{fb}^{-1} (13.6 TeV)"
+            CMS_lumi.cmsTextSize    = 1
+            CMS_lumi.lumiTextSize   = 0.7
+            CMS_lumi.extraOverCmsTextSize = 0.75
+            CMS_lumi.relPosX = 0.12
+            CMS_lumi.CMS_lumi(Canvas, 0, 0)
+
+            Canvas.Update()
+            Canvas.Draw()
+            Canvas.Write()
+            printCanvas(Canvas, "png", path=out_dir)
 
 
-        ### Zoomed m4l
+        '''### Zoomed m4l
         HStack_z, h_list = Stack(fMC2022, fMC2022EE, '_2GeV_', fs)
         HData_z = dataGraph(fData2022, fData2022EE,'_2GeV_', fs, blind=blindPlots)
         Canvas_z = ROOT.TCanvas('M4l_z_full2022_'+fs,'M4l_z_full2022_'+fs,canvasSizeX,canvasSizeY)
@@ -479,7 +504,4 @@ if __name__ == "__main__" :
             
         Canvas_z.Update() #very important!!!
         Canvas_z.Draw()
-        Canvas_z.Write()
-    
-        printCanvas(Canvas, "png", path=out_dir)
-        printCanvas(Canvas_z, "png", path=out_dir)
+        Canvas_z.Write()'''

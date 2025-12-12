@@ -5,8 +5,8 @@ from math import sqrt, log
 import ROOT
 
 # Configuration
-years = ["2022", "2022EE", "2023preBPix", "2023postBPix"]
-eos_path_template = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/FAKERATES/{}/'
+years = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
+eos_path_template = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/FAKERATES/{}/'
 branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z1Mass', 'Z2Mass']
 
 
@@ -102,13 +102,20 @@ def comb(year):
             0.989, 
             1.141,
             ])  # 2023preBPix
-    else:
+    if year == "2023postBPix":
         return np.array([
             0.795, # 4e
             1.025, # 4mu
             1.074, # 2e2mu
             1.078, # 2mu2e
             ])  # 2023postBPix
+    if year == "2024":
+        return np.array([
+            0.782, # 4e
+            0.838, # 4mu
+            0.845, # 2e2mu
+            0.747, # 2mu2e
+            ])  # 2024
 
 
 def ratio(year):
@@ -134,14 +141,20 @@ def ratio(year):
             1.102, 
             1.024,
             ])  # 2023preBPix
-    else:
+    if year == "2023postBPix":
         return np.array([
-            0.795,   # 4e
+            1.006,   # 4e
             1.040,  # 4mu
-            1.074,   # 2e2mu
-            1.078,  # 2mu2e
+            1.078,   # 2e2mu
+            1.025,  # 2mu2e
             ])  # 2023postBPix
-
+    if year == "2024":
+        return np.array([
+            1.001,   # 4e
+            1.047,  # 4mu
+            1.068,   # 2e2mu
+            1.025,  # 2mu2e
+            ])  # 2024
 
 def ZXYield(df, year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE):
     print("ZXYield")
@@ -184,10 +197,11 @@ def doZX(year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE):
 
     # Map year strings to file paths
     data_files = {
-        "2022": "/eos/user/m/mmanoni/HZZ_prod_170625/Data/2022/Data_eraCD_preEE_SKIMMED_FR_ok.root",
-        "2022EE": "/eos/user/m/mmanoni/HZZ_prod_170625/Data/2022/Data_eraEFG_postEE_FR_ok.root",
-        "2023preBPix": "/eos/user/m/mmanoni/HZZ_prod_170625/Data/2023/Data_eraC_preBPix_FR_ok.root",
-        "2023postBPix": "/eos/user/m/mmanoni/HZZ_prod_170625/Data/2023/Data_eraD_postBPix_FR_ok.root",
+        "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/170625/Data/2022/Data_eraCD_preEE_SKIMMED_FR_ok.root",
+        "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/170625/Data/2022/Data_eraEFG_postEE_FR_ok.root",
+        "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/170625/Data/2023/Data_eraC_preBPix_FR_ok.root",
+        "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/170625/Data/2023/Data_eraD_postBPix_FR_ok.root",
+        "2024": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/ZZ4lAnalysis_FR.root",
     }
 
     if year not in data_files:

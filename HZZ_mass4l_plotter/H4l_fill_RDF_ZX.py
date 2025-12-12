@@ -1,4 +1,5 @@
 #!/bin/env python3
+# PLOTS FILLER by Martina 12/12/2025
 import ROOT
 import argparse
 import os
@@ -6,29 +7,78 @@ import os
 ROOT.EnableImplicitMT()
 
 # Import utility functions
-from ZZAnalysis.NanoAnalysis.tools import get_genEventSumw
+#from ZZAnalysis.NanoAnalysis.tools import get_genEventSumw
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
 
 # Define paths
 MC_PATHS = {
-    "2022": "/eos/user/m/mmanoni/HZZ_prod_170625/MC/2022/",
-    "2022EE": "/eos/user/m/mmanoni/HZZ_prod_170625/MC/2022EE/",
-    "2023preBPix": "/eos/user/m/mmanoni/HZZ_prod_170625/MC/2023preBPix/",
-    "2023postBPix": "/eos/user/m/mmanoni/HZZ_prod_170625/MC/2023postBPix/",
+    "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2022_MC/",
+    "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2022EE_MC/",
+    "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2023preBPix_MC/",
+    "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2023postBPix_MC/",
+    "2024": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_MC/",
 }
 
 DATA_PATHS = {
-    "2022": "/eos/user/m/mmanoni/HZZ_prod_170625/Data/2022/Data_eraCD_preEE.root",
-    "2022EE": "/eos/user/m/mmanoni/HZZ_prod_170625/Data/2022/Data_eraEFG_postEE.root",
-    "2023preBPix": "/eos/user/m/mmanoni/HZZ_prod_170625/Data/2023/Data_eraC_preBPix.root",
-    "2023postBPix": "/eos/user/m/mmanoni/HZZ_prod_170625/Data/2023/Data_eraD_postBPix.root",
+    "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2022_Data/Data_eraCD_preEE.root",
+    "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2022_Data/Data_eraEFG_postEE.root",
+    "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2023_Data/Data_eraC_preBPix.root",
+    "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2023_Data/Data_eraD_postBPix.root",
+    "2024": [
+    
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma02024Cv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma02024Dv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma02024Ev1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma02024Fv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma02024Gv2/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma02024Hv2/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma02024Iv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma02024Iv2/ZZ4lAnalysis.root",
+
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma12024Cv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma12024Dv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma12024Ev1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma12024Fv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma12024Gv2/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma12024Hv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma12024Iv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/EGamma12024Iv2/ZZ4lAnalysis.root",
+
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon02024Cv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon02024Dv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon02024Ev1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon02024Fv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon02024Gv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon02024Hv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon02024Iv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon02024Iv2/ZZ4lAnalysis.root",
+
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon12024Cv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon12024Dv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon12024Ev1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon12024Fv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon12024Gv2/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon12024Hv2/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon12024Iv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/Muon12024Iv2/ZZ4lAnalysis.root",
+
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/MuonEG2024Cv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/MuonEG2024Dv1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/MuonEG2024Ev1/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/MuonEG2024Fv2/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/MuonEG2024Gv3/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/MuonEG2024Hv2/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/MuonEG2024Iv2/ZZ4lAnalysis.root",
+    "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/MuonEG2024Iv2v2/ZZ4lAnalysis.root"
+    ]
 }
 
 ZX_PATHS = {
-    "2022": "/afs/cern.ch/user/m/mmanoni/HZZ_CMSSSW14_new/CMSSW_14_1_6/src/ZZAnalysis/NanoAnalysis/plotters/ZX_results_2022.root",
-    "2022EE": "/afs/cern.ch/user/m/mmanoni/HZZ_CMSSSW14_new/CMSSW_14_1_6/src/ZZAnalysis/NanoAnalysis/plotters/ZX_results_2022EE.root",
-    "2023preBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_CMSSSW14_new/CMSSW_14_1_6/src/ZZAnalysis/NanoAnalysis/plotters/ZX_results_2023preBPix.root",
-    "2023postBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_CMSSSW14_new/CMSSW_14_1_6/src/ZZAnalysis/NanoAnalysis/plotters/ZX_results_2023postBPix.root",
+    "2022": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2022.root",
+    "2022EE": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2022EE.root",
+    "2023preBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2023preBPix.root",
+    "2023postBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2023postBPix.root",
+    "2024": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2024.root",
 }
 
 Z_FLAVORS = {
@@ -37,7 +87,37 @@ Z_FLAVORS = {
     "2e2mu": [(-169, -121), (-121, -169)],
 }
 
+def get_genEventSumw(input_file, maxEntriesPerSample=None):
+    '''
+       Util function to get the sum of weights per event.
+       Returns the sum of weights, similarly to what we
+       stored in Counters->GetBinContent(40) in the miniAODs.
+    '''
+    f = input_file
 
+    runs  = f.Runs
+    event = f.Events
+    nRuns = runs.GetEntries()
+    nEntries = event.GetEntries()
+
+    iRun = 0
+    genEventCount = 0
+    genEventSumw = 0.
+
+    while iRun < nRuns and runs.GetEntry(iRun) :
+        genEventCount += runs.genEventCount
+        genEventSumw += runs.genEventSumw
+        iRun +=1
+    print ("gen=", genEventCount, "sumw=", genEventSumw)
+
+    if maxEntriesPerSample is not None:
+        print(f"Scaling to {maxEntriesPerSample} entries")
+        if nEntries>maxEntriesPerSample :
+            genEventSumw = genEventSumw*maxEntriesPerSample/nEntries
+            nEntries=maxEntriesPerSample
+        print("    scaled to:", nEntries, "sumw=", genEventSumw)
+
+    return genEventSumw
 
 def define_histograms(df, df_SR, samplename, isMC):
     histos = {}
@@ -55,6 +135,11 @@ def define_histograms(df, df_SR, samplename, isMC):
     histos[f"ZZMass_4GeV_{samplename}"] = book(df,
         f"ZZMass_4GeV_{samplename}",
         ROOT.RDF.TH1DModel("ZZMass_4GeV_" + samplename, "ZZMass_4GeV_" + samplename, 233, 70., 1002.),
+        "m4l")
+
+    histos[f"ZZMass_5GeV_{samplename}"] = book(df,
+        f"ZZMass_5GeV_{samplename}",
+        ROOT.RDF.TH1DModel("ZZMass_5GeV_" + samplename, "ZZMass_5GeV_" + samplename, 66, 70., 400.),
         "m4l")
 
     histos[f"ZZMass_10GeV_{samplename}"] = book(df,
@@ -118,6 +203,11 @@ def define_histograms(df, df_SR, samplename, isMC):
             f"ZZMass_4GeV_{ch}_{samplename}",
             ROOT.RDF.TH1DModel(f"ZZMass_4GeV_{ch}_{samplename}", "", 233, 70., 1002.),
             "m4l")
+
+        histos[f"ZZMass_5GeV_{ch}_{samplename}"] = book(df_ch,
+            f"ZZMass_5GeV_{ch}_{samplename}",
+            ROOT.RDF.TH1DModel(f"ZZMass_5GeV_{ch}_{samplename}", "", 66, 70., 400.),
+            "m4l")
         
         histos[f"ZZMass_10GeV_{ch}_{samplename}"] = book(df_ch,
             f"ZZMass_10GeV_{ch}_{samplename}",
@@ -146,21 +236,42 @@ def define_histograms(df, df_SR, samplename, isMC):
 
     return histos
 
-def run_sample(samplename, filepath, output_file, isMC):
-    print(f"[INFO] Processing {samplename} from {filepath}")
-    if not os.path.exists(filepath):
-        print(f"[WARNING] File not found: {filepath}")
+def run_sample(sample_name, filepaths, output_file, isMC=True):
+    """
+    Process a sample (MC or Data) using ROOT RDataFrame.
+    filepaths can be a single string or a list of ROOT files.
+    """
+    # Ensure filepaths is a list
+    if isinstance(filepaths, str):
+        filepaths = [filepaths]
+
+    # Check each file individually
+    valid_files = [f for f in filepaths if os.path.exists(f)]
+    if not valid_files:
+        print(f"[WARNING] No valid files found for {sample_name}")
         return
 
-    df = ROOT.RDataFrame("Events", filepath)
+    print(f"[INFO] Processing {sample_name} from {len(valid_files)} files")
+    
+    # Create RDataFrame from the list of valid files
+    df = ROOT.RDataFrame("Events", valid_files)
 
     # Basic cuts
     df = df.Filter("bestCandIdx != -1").Filter("HLT_passZZ4l")
 
     if isMC:
-        genEventSumw = get_genEventSumw(ROOT.TFile.Open(filepath), 1e12)
+        # Use the first file to get genEventSumw
+        f = ROOT.TFile.Open(filepaths[0])
+        genEventSumw = get_genEventSumw(f, 1e12)
+        f.Close()
+
         df = df.Define("genEventSumw", str(genEventSumw))
         df = df.Define("weight", "overallEventWeight * ZZCand_dataMCWeight / genEventSumw")
+
+
+        #genEventSumw = get_genEventSumw(ROOT.TFile.Open(filepaths), 1e12)
+        #df = df.Define("genEventSumw", str(genEventSumw))
+        #df = df.Define("weight", "overallEventWeight * ZZCand_dataMCWeight / genEventSumw")
 
     df = df.Define("m4l", "ZZCand_mass[bestCandIdx]") \
            .Define("Z1mass", "ZZCand_Z1mass[bestCandIdx]") \
@@ -170,7 +281,7 @@ def run_sample(samplename, filepath, output_file, isMC):
 
     df_SR = df.Filter("m4l >= 105 && m4l <= 160")
 
-    histos = define_histograms(df, df_SR, samplename, isMC)
+    histos = define_histograms(df, df_SR, sample_name, isMC)
 
     output_file.cd()
     for hname, h in histos.items():
@@ -215,15 +326,41 @@ def run_zx(period):
     fout.Close()
 
 def run_data(period):
-    path = DATA_PATHS.get(period)
-    if not path:
+    """
+    Process Data for a given period and fill histograms using RDataFrame.
+
+    Handles both single ROOT files and lists of ROOT files.
+    """
+    paths = DATA_PATHS.get(period)
+    if not paths:
         raise ValueError(f"Unknown data period: {period}")
+
+    # Ensure we have a list of files
+    if isinstance(paths, str):
+        file_list = [paths]
+    else:
+        file_list = paths
+
+    # Filter out non-existent files
+    valid_files = [f for f in file_list if os.path.exists(f)]
+    if not valid_files:
+        print(f"[WARNING] No valid data files found for {period}")
+        return
+
+    print(f"[INFO] Processing Data for period {period} from {len(valid_files)} files")
+
+    # Open output file
     fout = ROOT.TFile.Open(f"H4l_Data_{period}_RDF.root", "RECREATE")
-    run_sample("Data", path, fout, isMC=False)
+
+    # Call run_sample with the list of files
+    run_sample("Data", valid_files, fout, isMC=False)
+
     fout.Close()
+    print(f"[INFO] Finished processing Data for period {period}")
 
 def run_mc(period):
     path = MC_PATHS.get(period)
+
     if not path:
         raise ValueError(f"Unknown MC period: {period}")
 
@@ -236,13 +373,24 @@ def run_mc(period):
     fout = ROOT.TFile.Open(f"H4l_MC_{period}_RDF.root", "RECREATE")
     for sample in samples:
         filename = os.path.join(path, sample, "ZZ4lAnalysis.root")
+        if not os.path.exists(filename):
+            print(f"[WARNING] File not found for sample {sample}: {filename}")
+            continue
+
+        print(f"[INFO] Processing {sample} from 1 file")
+
+        # Minimal fix: pass the filename string, not a list
+        '''f = ROOT.TFile.Open(filename)
+        genEventSumw = get_genEventSumw(f, 1e12)
+        f.Close()'''
+
         run_sample(sample, filename, fout, isMC=True)
     fout.Close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["data", "mc", "zx", "both"], default="data")
-    parser.add_argument("--period", choices=["2022", "2022EE", "2023preBPix", "2023postBPix"], default="2022")
+    parser.add_argument("--mode", choices=["data", "mc", "zx", "both"], default="all")
+    parser.add_argument("--period", choices=["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"], default="2023postBPix")
     args = parser.parse_args()
 
     if args.mode == "data":
@@ -251,6 +399,7 @@ if __name__ == "__main__":
         run_mc(args.period)
     elif args.mode == "zx":
         run_zx(args.period)
-    elif args.mode == "both":
+    elif args.mode == "all":
         run_mc(args.period)
         run_data(args.period)
+        run_zx(args.period)
