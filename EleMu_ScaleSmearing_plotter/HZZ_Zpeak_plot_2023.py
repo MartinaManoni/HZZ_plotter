@@ -15,16 +15,18 @@ plt.style.use(hep.style.CMS)
 
 def get_files_for_year(YEAR):
 
-    #base = " /eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/" #with corrections
-    base = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/" #without corrections
-    CHANNEL = "e"  # "mu", "e", "incl"
+    base = " /eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/" #with corrections
+    #base = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/" #without corrections
+    CHANNEL = "mu"  # "mu", "e", "incl"
     # ----------------------------
     # 2022 preEE
     # ----------------------------
     if YEAR == "2022preEE":
         lumi = 7.98
-        mc_dir   = f"{base}/2022_MC/PROD_samplesNano_2022_MC_cc84ce40/"
-        data_dir = f"{base}/2022_Data/PROD_samplesNano_2022_Data_cc84ce40/"
+        #mc_dir   = f"{base}/2022_MC/PROD_samplesNano_2022_MC_cc84ce40/"
+        mc_dir   = f"{base}/2022_MC/"
+        #data_dir = f"{base}/2022_Data/PROD_samplesNano_2022_Data_cc84ce40/"
+        data_dir = f"{base}/2022_Data/"
         datafile = f"{data_dir}/Data_eraCD_preEE.root"
 
     # ----------------------------
@@ -32,8 +34,10 @@ def get_files_for_year(YEAR):
     # ----------------------------
     elif YEAR == "2022postEE":
         lumi = 26.67
-        mc_dir   = f"{base}/2022EE_MC/PROD_samplesNano_2022EE_MC_cc84ce40/"
-        data_dir = f"{base}/2022_Data/PROD_samplesNano_2022_Data_cc84ce40/"
+        #mc_dir   = f"{base}/2022EE_MC/PROD_samplesNano_2022EE_MC_cc84ce40/"
+        #data_dir = f"{base}/2022_Data/PROD_samplesNano_2022_Data_cc84ce40/"
+        mc_dir   = f"{base}/2022EE_MC/"
+        data_dir = f"{base}/2022_Data/"
         datafile = f"{data_dir}/Data_eraEFG_postEE.root"
 
     # ----------------------------
@@ -41,8 +45,10 @@ def get_files_for_year(YEAR):
     # ----------------------------
     elif YEAR == "2023preBPix":
         lumi = 18.06
-        mc_dir   = f"{base}/2023preBPix_MC/PROD_samplesNano_2023preBPix_MC_cc84ce40/"
-        data_dir = f"{base}/2023_Data/PROD_samplesNano_2023_Data_cc84ce40/"
+        mc_dir   = f"{base}/2023preBPix_MC/"
+        data_dir = f"{base}/2023_Data/"
+        #mc_dir   = f"{base}/2023preBPix_MC/PROD_samplesNano_2023preBPix_MC_cc84ce40/"
+        #data_dir = f"{base}/2023_Data/PROD_samplesNano_2023_Data_cc84ce40/"
         datafile = f"{data_dir}/Data_eraC_preBPix.root"
 
     # ----------------------------
@@ -50,8 +56,10 @@ def get_files_for_year(YEAR):
     # ----------------------------
     elif YEAR == "2023postBPix":
         lumi = 9.69
-        mc_dir   = f"{base}/2023postBPix_MC/PROD_samplesNano_2023postBPix_MC_cc84ce40/"
-        data_dir = f"{base}/2023_Data/PROD_samplesNano_2023_Data_cc84ce40"
+        mc_dir   = f"{base}/2023postBPix_MC/"
+        data_dir = f"{base}/2023_Data/"
+        #mc_dir   = f"{base}/2023postBPix_MC/PROD_samplesNano_2023postBPix_MC_cc84ce40/"
+        #data_dir = f"{base}/2023_Data/PROD_samplesNano_2023_Data_cc84ce40"
         datafile = f"{data_dir}/Data_eraD_postBPix.root"
 
     # ----------------------------
@@ -146,7 +154,7 @@ def plot_ZCand_samples(bestZIdx, ZCand_mass, ZCand_flav, sample_name):
     plt.savefig(f'plot_{sample_name}.png')
     plt.close()
 
-YEAR = '2022preEE'
+YEAR = '2022postEE'
 
 CHANNEL, fname_dy, fname_tt, fname_wz, fname_dt, lumi = get_files_for_year(YEAR)
 
@@ -257,6 +265,95 @@ ax[0].errorbar(binsc_dt, n_dt, poisson_interval(n_dt), marker='.', color='k', li
 ax[0].set_ylabel('Events / bin width')
 
 ax[1].errorbar(binsc, mc_tot * (sum(n_dt) / sum(mc_tot)) / n_dt, marker='.', color='k', linestyle='None')
+
+# -----------------------------------------------------------
+# Horizontal reference line at MC/Data = 1
+# -----------------------------------------------------------
+ax[1].axhline(1.0, color="black", linestyle="--", linewidth=1)
+
+
+# ===========================================================
+#   MC STATISTICAL UNCERTAINTY (per bin)
+# ===========================================================
+dy_w2, _ = np.histogram(ak.flatten(m_dy), weights=(w_tot_dy)**2, bins=CP_BINNING)
+tt_w2, _ = np.histogram(ak.flatten(m_tt), weights=(w_tot_tt)**2, bins=CP_BINNING)
+wz_w2, _ = np.histogram(ak.flatten(m_wz), weights=(w_tot_wz)**2, bins=CP_BINNING)
+
+mc_stat_err = np.sqrt(dy_w2 + tt_w2 + wz_w2)
+print("mc_stat_err", mc_stat_err)
+
+# Normalize MC to data
+scale_norm = sum(n_dt) / sum(mc_tot)
+mc_scaled = mc_tot * scale_norm
+mc_stat_scaled = mc_stat_err * scale_norm
+
+ratio = mc_scaled / n_dt
+ratio_stat_err = mc_stat_scaled / n_dt
+
+# ===========================================================
+# CONSTANT SYSTEMATIC UNCERTAINTIES (YOU PROVIDE THESE TWO)
+# ===========================================================
+# Example: scale = 1%, resolution = 4%
+# Replace these two after you send the numbers
+
+#2022 ele
+#scale_value = 0.003
+#res_value   = 0.12
+
+#2023 ele
+#scale_value = 0.002
+#res_value   = 0.10
+
+#2022 mu
+scale_value = 0.0015
+res_value   = 0.05
+
+#2023 mu
+#scale_value = 0.0015
+#res_value   = 0.05
+
+
+scale_syst = scale_value * np.ones_like(binsc)
+res_syst   = res_value   * np.ones_like(binsc)
+
+ratio_scale_err = ratio * scale_syst
+ratio_res_err   = ratio * res_syst
+
+
+# ===========================================================
+#   TOTAL UNCERTAINTY (stat ⊕ scale ⊕ resolution)
+# ===========================================================
+ratio_tot_err = np.sqrt(
+    ratio_stat_err**2 +
+    ratio_scale_err**2 +
+    ratio_res_err**2
+)
+
+
+# ===========================================================
+#   DRAW TOTAL UNCERTAINTY BAND
+# ===========================================================
+ax[1].fill_between(
+    binsc,
+    1 - ratio_tot_err,
+    1 + ratio_tot_err,
+    color="blue",
+    alpha=0.5,
+    label="Total unc. (stat + scale + res)"
+)
+
+ax[1].legend()
+
+
+
+
+
+
+
+
+
+
+
 #ax[1].set_xlabel(r'$m_{ee}$')
 #ax[1].set_xlabel(r'$m_{\mu\mu}$')
 
@@ -283,5 +380,5 @@ hep.cms.label(
     ax=ax[0]
 )
 
-plt.savefig(f"plot_{CHANNEL}_{YEAR}_NO_Corr.png")
-plt.savefig(f"plot_{CHANNEL}_{YEAR}_NO_Corr.pdf")
+plt.savefig(f"plot_{CHANNEL}_{YEAR}_Corr.png")
+plt.savefig(f"plot_{CHANNEL}_{YEAR}_Corr.pdf")
