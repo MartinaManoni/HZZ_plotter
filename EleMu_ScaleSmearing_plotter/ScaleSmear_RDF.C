@@ -178,15 +178,32 @@ void ScaleSmear_RDF() {
     // =====================================================================
     // PLOTS
     // =====================================================================
-    TCanvas *c = new TCanvas("c","",900,800);
+    TCanvas *c = new TCanvas("c","",1400,1000);
     c->Divide(1,2);
 
     // Top pad
     c->cd(1);
     gPad->SetPad(0,0.3,1,1);
     gPad->SetBottomMargin(0.05);
+    gPad->SetLeftMargin(0.15);
 
-    hMC->SetLineColor(kBlue);      // blue MC line
+
+    // Convert #1f77b4 to RGB 0-1 scale
+    Float_t r = 31.0/255.0;
+    Float_t g = 119.0/255.0;
+    Float_t b = 180.0/255.0;
+
+    // Define a new ROOT color (ID = 1001, pick an unused ID)
+    Int_t myBlue = TColor::GetFreeColorIndex();  
+    new TColor(myBlue, r, g, b);
+
+    // Now set it
+    hMC->SetTitle("");
+    hMC->SetStats(0); 
+    hMC->SetLineColor(myBlue);
+    hMC->GetXaxis()->SetLabelSize(0); 
+
+    //hMC->SetLineColor(kBlue);      // blue MC line
     hMC->SetLineWidth(2);
     hMC->SetFillStyle(0);          // no fill
     hMC->Draw("HIST");
@@ -195,10 +212,15 @@ void ScaleSmear_RDF() {
     hDT->SetMarkerSize(1.0);
     hDT->SetLineColor(kBlack);
     hDT->Draw("E SAME");
-
+    hMC->GetYaxis()->SetTitle("Events/bin width");
+    //hMC->GetYaxis()->CenterTitle(true);
+    hMC->GetYaxis()->SetTitleOffset(0.5);
+    hMC->GetYaxis()->SetTitleSize(0.07);
+    //hMC->GetYaxis()->SetLabelSize(0.08);
     TLegend *leg = new TLegend(0.65,0.7,0.88,0.88);
-    leg->AddEntry(hDT,"Data","lp");
     leg->AddEntry(hMC,"MC (DY+t#bar{t}+WZ)","l");
+    leg->AddEntry(hDT,"Data","lp");
+    leg->SetLineColor(kWhite);
     leg->Draw();
 
     CMS_lumi cmsLabel;
@@ -209,24 +231,37 @@ void ScaleSmear_RDF() {
     gPad->SetPad(0,0.0,1,0.3);
     gPad->SetTopMargin(0.05);
     gPad->SetBottomMargin(0.25);
+    gPad->SetLeftMargin(0.15);
 
     TH1D *hRatio = (TH1D*)hMC->Clone("hRatio");
     hRatio->Divide(hDT);
-
+    hRatio->SetTitle("");
+    hRatio->SetStats(0);
     hRatio->SetMinimum(0.5);
     hRatio->SetMaximum(1.5);
+    // Turn off automatic labels
+    //hRatio->GetYaxis()->SetNdivisions(0);
+
+    // Manually set only two labels
+    //hRatio->GetYaxis()->SetBinLabel(1, "0.5");
+    //hRatio->GetYaxis()->SetBinLabel(2, "1.5");
     hRatio->GetYaxis()->SetTitle("MC/Data");
-    hRatio->GetYaxis()->SetTitleSize(0.10);
+    hRatio->GetYaxis()->CenterTitle(true);
+    hRatio->GetYaxis()->SetTitleOffset(0.2);
+    hRatio->GetYaxis()->SetTitleSize(0.15);
     hRatio->GetYaxis()->SetLabelSize(0.08);
+    //hRatio->GetYaxis()->SetLabelOffset(0.1);
 
     hRatio->GetXaxis()->SetTitle("m_{ll} [GeV]");
     hRatio->GetXaxis()->SetTitleSize(0.12);
     hRatio->GetXaxis()->SetLabelSize(0.10);
-    hRatio->Draw("E");
+    hRatio->SetMarkerStyle(8);       // black points
+    hRatio->SetMarkerSize(1.0);
+    hRatio->SetLineColor(kBlack);
+    hRatio->Draw("P");
 
     c->SaveAs(Form("plot_%s_%s_RDF.png", CHANNEL.c_str(), YEAR.c_str()));
     c->SaveAs(Form("plot_%s_%s_RDF.pdf", CHANNEL.c_str(), YEAR.c_str()));
 
     std::cout << "\nSaved plot: plot_" << CHANNEL << "_" << YEAR << "_RDF\n";
 }
-
