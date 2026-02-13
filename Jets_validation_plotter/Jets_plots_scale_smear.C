@@ -9,43 +9,7 @@ void DrawRatioPlot(string name, string var_name, TCanvas *c, TH1D *data, TH1D *M
         std::cout << "[INFO] Starting DrawRatioPlot function for plot: " << name << std::endl;
         std::cout << "[INFO] Lumi: " << _lumi << std::endl;
 
-        // Normalize MC to data
-        double dataIntegral = data->Integral();
-        double mcIntegral = MC->Integral();
-        //double scaleFactor = dataIntegral / mcIntegral;
-        double scaleFactor = 1.0;
-        MC->Scale(scaleFactor);
-        MCUp->Scale(scaleFactor);
-        MCDn->Scale(scaleFactor);
-        MCUpscale->Scale(scaleFactor);
-        MCDnscale->Scale(scaleFactor);
-
-        //Splits the canvas into two vertical pads
-        c->Divide(0,2,0,0);
-        // TPad * pad1 = new TPad("pad1","pad1", 0, 0.3, 1, 1.0);
-        // pad1->Draw();
-        c->cd(1);
-
-        gPad->SetBottomMargin(0.02);
-        gPad->SetTopMargin(0.18);
-        gPad->SetLeftMargin(0.10);
-        
-        //***Main Histogram Plot (Top Panel)***
-        double max = 0.;
-        for (int bin = 0; bin < MC->GetSize() - 2; bin++){
-          if ( MC->GetBinContent(bin + 1) > max) max = MC->GetBinContent(bin + 1);
-        }
-        MC->SetMaximum(1.4*max); //Scales the y-axis maximum to 140% of the largest bin for better visibility.
-
-        MC->SetFillColor(kOrange + 1);
-        double binWidth = MC->GetXaxis()->GetBinWidth(1); 
-        TString yAxisLabel = TString::Format("Events/%.2f", binWidth);
-        MC->GetYaxis()->SetTitle(yAxisLabel);
-        MC->Draw("HIST");
-        MC->GetXaxis()->SetLabelSize(0);
-        MC->GetYaxis()->SetTitleSize(0.07);
-        MC->GetYaxis()->SetLabelSize(0.07);
-        MC->GetYaxis()->SetTitleOffset(0.7);
+        gStyle->SetOptStat(0);
 
         std::cout << "Scale and smearing calculation start "<<std::endl;
         // Sum uncertainties in quadrature
@@ -53,34 +17,133 @@ void DrawRatioPlot(string name, string var_name, TCanvas *c, TH1D *data, TH1D *M
         TH1D *MCDnFinal = new TH1D("MCDnFinal", "MCDnFinal", MC->GetSize() - 2, MC->GetXaxis()->GetXmin(), MC->GetXaxis()->GetXmax());
 
         for (int bin = 0; bin < MC->GetSize() - 2; bin++) {
-            double up_var = 0.0, dn_var = 0.0;
+          // --- Nominal ---
+          double nom = MC->GetBinContent(bin + 1);
 
-            double var1 = MCUp->GetBinContent(bin + 1) - MC->GetBinContent(bin + 1);
-            double var2 = MCUpscale->GetBinContent(bin + 1) - MC->GetBinContent(bin + 1);
-            double var3 = MCDn->GetBinContent(bin + 1) - MC->GetBinContent(bin + 1);
-            double var4 = MCDnscale->GetBinContent(bin + 1) - MC->GetBinContent(bin + 1);
-            
-            if (var1 > 0) up_var += pow(var1, 2);
-            else dn_var += pow(var1, 2);
+          // --- Compute shifts (signed deviations) ---
+          double dJECup     = MCUp->GetBinContent(bin + 1)     - nom;
+          double dJECdn     = MCDn->GetBinContent(bin + 1)     - nom;
+          double dScaleUp   = MCUpscale->GetBinContent(bin + 1) - nom;
+          double dScaleDn   = MCDnscale->GetBinContent(bin + 1) - nom;
 
-            if (var2 > 0) up_var += pow(var2, 2);
-            else dn_var += pow(var2, 2);
+          // --- Quadrature accumulators ---
+          double up2 = 0.0;
+          double dn2 = 0.0;
 
-            if (var3 > 0) up_var += pow(var3, 2);
-            else dn_var += pow(var3, 2);
+          // Helper to accumulate by sign
+          auto accumulate = [&](double d) {
+              if (d > 0) up2 += d*d;
+              else       dn2 += d*d;
+          };
 
-            if (var4 > 0) up_var += pow(var4, 2);
-            else dn_var += pow(var4, 2);
+          // --- Add *all* signed variations ---
+          accumulate(dJECup);
+          accumulate(dJECdn);
+          accumulate(dScaleUp);
+          accumulate(dScaleDn);
 
-            MCUpFinal->SetBinContent(bin + 1, sqrt(up_var));
-            MCDnFinal->SetBinContent(bin + 1, sqrt(dn_var));
+          // --- Include MC statistical uncertainty ---
+          double mc_stat = MC->GetBinError(bin + 1);
+          up2 += mc_stat * mc_stat;
+          dn2 += mc_stat * mc_stat;
+
+          // --- Final uncertainties ---
+          double total_up = sqrt(up2);
+          double total_dn = sqrt(dn2);
+
+          // --- Set final MC uncertainty envelopes ---
+          MCUpFinal->SetBinContent(bin + 1, nom + total_up);
+          MCDnFinal->SetBinContent(bin + 1, nom - total_dn);
+
+          // --- Print debug ---
+          std::cout << "Bin " << bin+1
+                    << ": nom=" << nom
+                    << "  dJECup="   << dJECup
+                    << "  dJECdn="   << dJECdn
+                    << "  dScaleUp=" << dScaleUp
+                    << "  dScaleDn=" << dScaleDn
+                    << "  total_up=" << total_up
+                    << "  total_dn=" << total_dn
+                    << std::endl;
         }
-        std::cout << "Scale and smearing calculation end "<<std::endl;
-        data->SetLineColor(kBlack);
-        data->SetMarkerStyle(20);
-        data->SetMarkerSize(0.6);
-        data->Draw("p E1 X0 SAME");
 
+        // Normalize MC to data
+        double dataIntegral = data->Integral();
+        double mcIntegral = MC->Integral();
+        double scaleFactor = dataIntegral / mcIntegral;
+        //double scaleFactor = 1.0;
+        MC->Scale(scaleFactor);
+        MCUp->Scale(scaleFactor);
+        MCDn->Scale(scaleFactor);
+        MCUpscale->Scale(scaleFactor);
+        MCDnscale->Scale(scaleFactor);
+        MCUpFinal->Scale(scaleFactor);
+        MCDnFinal->Scale(scaleFactor);
+
+        //Splits the canvas into two vertical pads
+        c->Divide(0,2,0,0);
+        // TPad * pad1 = new TPad("pad1","pad1", 0, 0.3, 1, 1.0);
+        // pad1->Draw();
+        c->cd(1);
+
+
+        gPad->SetBottomMargin(0.02);
+        gPad->SetTopMargin(0.18);
+        gPad->SetLeftMargin(0.10);
+        
+        //***Main Histogram Plot (Top Panel)***
+
+
+        //MC->SetTitle("");
+        //data->SetTitle("");
+        //MCUpFinal->SetTitle("");
+        //MCDnFinal->SetTitle("");
+
+        double max = 0.;
+        for (int bin = 0; bin < MC->GetSize() - 2; bin++){
+          if ( MC->GetBinContent(bin + 1) > max) max = MC->GetBinContent(bin + 1);
+        }
+        MC->SetMaximum(1.4*max); //Scales the y-axis maximum to 140% of the largest bin for better visibility.
+
+        
+        // CMS-TDR inspired colors
+        MC->SetFillColor(TColor::GetColor("#6baed6"));   // soft blue
+        MC->SetLineColor(TColor::GetColor("#2171b5"));   // darker blue outline
+        MC->SetLineWidth(2);
+        double binWidth = MC->GetXaxis()->GetBinWidth(1); 
+        TString yAxisLabel = TString::Format("Events/%.2f", binWidth);
+        MC->GetYaxis()->SetTitle(yAxisLabel);
+        MC->Draw("HIST");
+        MC->GetXaxis()->SetLabelSize(0);
+        MC->GetYaxis()->SetTitleSize(0.07);
+        MC->GetYaxis()->SetLabelSize(0.07);
+        MC->GetYaxis()->SetTitleOffset(10.);
+
+        MC->GetYaxis()->SetNoExponent(kFALSE);  // allow 10^x
+        MC->GetYaxis()->SetMoreLogLabels(kTRUE);
+        MC->GetYaxis()->SetMaxDigits(2);
+
+        MC->GetXaxis()->SetLabelSize(0); // hide x labels on top
+
+
+        std::cout << "Scale and smearing calculation end "<<std::endl;
+        data->SetMarkerStyle(20);
+        data->SetMarkerColor(kBlack);
+        data->SetLineColor(kBlack);
+        data->SetMarkerSize(0.8);
+        data->Draw("P SAME");
+
+
+        // ---- CMS label ----
+        CMS_lumi cms;
+        cms.set_lumi((TPad*)gPad, _lumi);
+
+
+        MC->SetTitle("");
+        data->SetTitle("");
+        MCUpFinal->SetTitle("");
+        MCDnFinal->SetTitle("");
+        
         //***Ratio Plot (Bottom Panel)***
         c->cd(2);
 
@@ -92,35 +155,57 @@ void DrawRatioPlot(string name, string var_name, TCanvas *c, TH1D *data, TH1D *M
         TH1F * sigma_up = new TH1F("sigma_up","sigma_up", MC->GetSize() - 2, MC->GetXaxis()->GetXmin(), MC->GetXaxis()->GetXmax());
         TH1F * sigma_dn = new TH1F("sigma_dn","sigma_dn", MC->GetSize() - 2, MC->GetXaxis()->GetXmin(), MC->GetXaxis()->GetXmax());
 
-        for(int bin = 0; bin < MC->GetSize() - 2; bin++){
-          if (MC->GetBinContent(bin + 1) == 0){
-                  Ratio   ->SetBinContent(bin + 1, 0);
-                  Ratio   ->SetBinError(bin + 1, 0);
-                  sigma_up->SetBinContent(bin + 1, 0);
-                  sigma_dn->SetBinContent(bin + 1, 0);
-          }else{
-                  Ratio   ->SetBinContent(bin + 1, float(data->GetBinContent(bin + 1))/MC->GetBinContent(bin + 1));
-                  Ratio   ->SetBinError(bin + 1, 1./pow((data->GetBinContent(bin + 1)),2));
-                  sigma_up->SetBinContent(bin + 1, ((float(MCUpFinal->GetBinContent(bin + 1) + MC->GetBinContent(bin + 1)))/MC->GetBinContent(bin + 1)));
-                  sigma_dn->SetBinContent(bin + 1, ((float((- MCDnFinal->GetBinContent(bin + 1)) + MC->GetBinContent(bin + 1)))/MC->GetBinContent(bin + 1)));
-          }
+        for(int bin = 1; bin <= MC->GetNbinsX(); bin++){
+            double mcVal   = MC->GetBinContent(bin);
+            double dataVal = data->GetBinContent(bin);
+            double dataErr = data->GetBinError(bin);
+
+            if(mcVal == 0){
+                Ratio->SetBinContent(bin, 0);
+                Ratio->SetBinError(bin, 0);
+                sigma_up->SetBinContent(bin, 0);
+                sigma_dn->SetBinContent(bin, 0);
+            } else {
+                // Fractional ratio and data error
+                Ratio->SetBinContent(bin, dataVal / mcVal - 1);
+                Ratio->SetBinError(bin, 0);
+
+                // Fractional MC systematic uncertainties
+                sigma_up->SetBinContent(bin, MCUpFinal->GetBinContent(bin) / mcVal - 1);
+                sigma_dn->SetBinContent(bin, MCDnFinal->GetBinContent(bin) / mcVal - 1);
+            }
         }
 
+        std::cout << "[INFO] Fractional MC uncertainties (sigma_up, sigma_dn):" << std::endl;
+        for(int bin = 1; bin <= MC->GetNbinsX(); bin++){
+            double sigmaUpVal = sigma_up->GetBinContent(bin);
+            double sigmaDnVal = sigma_dn->GetBinContent(bin);
+            std::cout << "Bin " << bin 
+                      << ": sigma_up = " << sigmaUpVal 
+                      << ", sigma_dn = " << sigmaDnVal << std::endl;
+        }
+
+        /*
         double temp;
         for(int bin = 0; bin < Ratio->GetSize() - 2; bin++){
           temp = Ratio->GetBinContent(bin + 1);
-          Ratio->SetBinContent( bin + 1, temp - 1);
+          Ratio->SetBinContent( bin + 1, temp);
         }
 
         for(int bin = 0; bin < sigma_up->GetSize() - 2; bin++){
           temp = sigma_up->GetBinContent(bin + 1);
-          sigma_up->SetBinContent( bin + 1, temp - 1);
+          sigma_up->SetBinContent( bin + 1, temp);
         }
 
         for(int bin = 0; bin < sigma_dn->GetSize() - 2; bin++){
           temp = sigma_dn->GetBinContent(bin + 1);
-          sigma_dn->SetBinContent( bin + 1, temp - 1);
+          sigma_dn->SetBinContent( bin + 1, temp);
         }
+        */
+
+        Ratio->SetTitle("");
+        sigma_up->SetTitle("");
+        sigma_dn->SetTitle("");
 
         sigma_up->SetTitle("");
         sigma_up->SetFillColor(kGray);
@@ -129,26 +214,35 @@ void DrawRatioPlot(string name, string var_name, TCanvas *c, TH1D *data, TH1D *M
         sigma_up->SetMinimum(-1.0);
         std::string ytitle_plots = "Leading Jet " + var_name;
         sigma_up->GetXaxis()->SetTitle(ytitle_plots.c_str());
-        sigma_up->GetYaxis()->SetTitle("(Data/MC)-1");
-        sigma_up->GetYaxis()->SetTitleOffset(0.6);
+        sigma_up->GetYaxis()->SetTitle("Data/MC");
+        sigma_up->GetYaxis()->SetTitleOffset(10.);
         sigma_up->Draw("HIST");
         sigma_up->GetXaxis()->SetLabelSize(0.07);
         sigma_up->GetXaxis()->SetTitleSize(0.07);
         sigma_up->GetYaxis()->SetLabelSize(0.07);
         sigma_up->GetYaxis()->SetTitleSize(0.07);
 
-        sigma_dn->SetFillColor(kGray+2);
-        sigma_dn->SetLineColor(kGray+2);
+        sigma_dn->SetFillColor(kGray);
+        sigma_dn->SetLineColor(kGray);
         sigma_dn->Draw("HIST SAME");
 
         gPad->RedrawAxis();
 
         Ratio->SetMarkerStyle(20);
-        Ratio->SetMarkerSize(0.6);
-        Ratio->Draw("p E1 X0 SAME");
+        Ratio->SetMarkerSize(0.8);
+        Ratio->Draw("P SAME");
+
+
+        double x_min = Ratio->GetXaxis()->GetXmin();
+        double x_max = Ratio->GetXaxis()->GetXmax();
+        TLine *line0 = new TLine(x_min, 0, x_max, 0);
+        line0->SetLineColor(kBlack);  // or kBlack
+        line0->SetLineStyle(2);     // dashed line
+        line0->SetLineWidth(2);
+        line0->Draw("SAME");
 
         c->cd(1);
-        TLegend * leg = new TLegend(0.74,0.45,0.95,0.75);
+        TLegend * leg = new TLegend(0.64,0.45,0.85,0.75);
         leg->SetBorderSize(0);
         leg->SetFillColor(0);
         leg->SetFillStyle(0);
@@ -157,7 +251,7 @@ void DrawRatioPlot(string name, string var_name, TCanvas *c, TH1D *data, TH1D *M
         leg->AddEntry(MC, "DY + t#bar{t}  MC", "f" );
         leg->AddEntry(data, "Data", "p");
         //leg->AddEntry(UncertaintyBand, "Uncertainty Band", "f");
-        leg->AddEntry(sigma_up, "JEC Uncertainty", "f");
+        leg->AddEntry(sigma_up, "Stat.+Syst Unc.", "f");
         leg->Draw();
 
         c->Update();
@@ -204,20 +298,24 @@ tuple<ROOT::RDF::RResultPtr<TH1D>, ROOT::RDF::RResultPtr<TH1D>, ROOT::RDF::RResu
         .Define("Horn_Cut", 
         "((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50)")
 
+        .Define(
+        "HF_Cut",
+        "(abs(Jet_eta) < 3 || abs(Jet_eta) > 5 || Jet_pt > 50)")
+    
         .Define("Jet_Mask", 
-        "(Jet_pt > 30) && Horn_Cut && (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false")
+        "(Jet_pt > 30) && Horn_Cut && HF_Cut && Jet_jetId==6 && Jet_ZZMask == false")
         
         .Define("Jet_Mask_scaleUp", 
-        "(Jet_scaleUp_pt > 30) && Horn_Cut &&  (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false")
+        "(Jet_scaleUp_pt > 30) && Horn_Cut && HF_Cut && Jet_jetId==6 && Jet_ZZMask == false")
         
         .Define("Jet_Mask_scaleDown", 
-        "(Jet_scaleDn_pt > 30) && Horn_Cut &&  (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false") 
+        "(Jet_scaleDn_pt > 30) && Horn_Cut && HF_Cut && Jet_jetId==6 && Jet_ZZMask == false") 
         
         .Define("Jet_Mask_smearUp", 
-        "(Jet_smearUp_pt > 30) && Horn_Cut &&  (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false") 
+        "(Jet_smearUp_pt > 30) && Horn_Cut && HF_Cut && Jet_jetId==6 && Jet_ZZMask == false") 
         
         .Define("Jet_Mask_smearDown", 
-        "(Jet_smearDn_pt > 30) && Horn_Cut &&  (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false") 
+        "(Jet_smearDn_pt > 30) && Horn_Cut && HF_Cut && Jet_jetId==6 && Jet_ZZMask == false") 
         
         .Define("FilteredJet_eta", "Jet_eta[Jet_Mask]")
         .Define("FilteredJet_pt", "Jet_pt[Jet_Mask]")
@@ -284,8 +382,11 @@ ROOT::RDF::RResultPtr<TH1D> Histo_Data(string fpath, string var, int bins, doubl
     auto sorted_data = rdf
         .Define("Horn_Cut", 
         "((abs(Jet_eta) < 2.5 || abs(Jet_eta) > 3) || Jet_pt > 50)") 
+        .Define(
+        "HF_Cut",
+        "(abs(Jet_eta) < 3 || abs(Jet_eta) > 5 || Jet_pt > 50)")
         .Define("Jet_Mask", 
-        "(Jet_pt > 30) && Horn_Cut && (Jet_jetId == 6 || Jet_jetId == 2) && Jet_ZZMask == false")
+        "(Jet_pt > 30) && Horn_Cut && HF_Cut && Jet_jetId==6 && Jet_ZZMask == false")
         .Define("FilteredJet_eta", "Jet_eta[Jet_Mask]")
         .Define("FilteredJet_pt", "Jet_pt[Jet_Mask]")
         .Define("FilteredJet_Njets", "FilteredJet_pt.size()")
@@ -312,7 +413,7 @@ void Jets_plots_scale_smear(){
   ROOT::EnableImplicitMT();
   std::string var = "leadEta"; //"leadNjets";//"leadEta";//leadPt //leadchEmEF //leadEta //leadneEmEF //leadNJets
   std::string var_name = "#eta"; //"p_{T}";//"#eta"; ////Neutral Em Energy Fraction //charged Em Energy Fraction //Number of jets
-  std::string period = "preEE2022"; //"preEE2022" "postBPix2023" "preBPix2023"
+  std::string period = "postBPix2023"; //"preEE2022" "postBPix2023" "preBPix2023"
 
   // Define a map that associates 'var' with the corresponding binning
   std::map<std::string, std::tuple<int, double, double>> var_binning;
@@ -326,35 +427,29 @@ void Jets_plots_scale_smear(){
   double min_val, max_val;
   std::tie(n_bins, min_val, max_val) = var_binning[var];
 
-  std::cout<<"period preEE2022"<<std::endl;
-  std::string fTT   = "/eos/user/m/mmanoni/HZZ_prod_70625_JERC_ok/MC/PROD_samplesNano_2022_MC_ff80e26d/TTto2L2Nu/ZZ4lAnalysis.root";
-  std::string fDY   = "/eos/user/m/mmanoni/HZZ_prod_70625_JERC_ok/MC/PROD_samplesNano_2022_MC_ff80e26d/DYJetsToLL/ZZ4lAnalysis.root";
-  std::string fdata = "/eos/user/m/mmanoni/HZZ_prod_70625_JERC_ok/Data/PROD_samplesNano_2022_Data_ff80e26d/Data_eraCD_preEE.root";
-  double lumi  = 7.98;
+  /*std::cout<<"period preEE2022"<<std::endl;
+  std::string fDY   = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2022_MC/PROD_samplesNano_2022_MC_cc84ce40/DYJetsToLL/ZZ4lAnalysis.root";
+  std::string fTT   = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2022_MC/PROD_samplesNano_2022_MC_cc84ce40/TTto2L2Nu/ZZ4lAnalysis.root";
+  std::string fdata = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2022_Data/PROD_samplesNano_2022_Data_cc84ce40/Data_eraCD_preEE.root";
+  double lumi  = 7.98;*/
 
   /*std::cout<<"period postEE2022"<<std::endl;
-  string fDY   = "/eos/user/m/mmanoni/HZZ_samples22_newprod/MC_JetClean_Jes/PROD_samplesNano_2022EE_MC_3e5e00ec/DYJetsToLL/ZZ4lAnalysis.root";
-  string fTT   = "/eos/user/m/mmanoni/HZZ_samples22_newprod/MC_JetClean_Jes/PROD_samplesNano_2022EE_MC_3e5e00ec/TTto2L2Nu/ZZ4lAnalysis.root"; 
-  string fdata = "/eos/user/m/mmanoni/HZZ_samples22_newprod/Data_JetClean_Jes/PROD_samplesNano_2022_Data_3e5e00ec/Data_eraEFG_postEE.root";
+  string fDY   = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2022EE_MC/PROD_samplesNano_2022EE_MC_cc84ce40/DYJetsToLL/ZZ4lAnalysis.root";
+  string fTT   = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2022EE_MC/PROD_samplesNano_2022EE_MC_cc84ce40/TTto2L2Nu/ZZ4lAnalysis.root"; 
+  string fdata = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2022_Data/PROD_samplesNano_2022_Data_cc84ce40/Data_eraEFG_postEE.root";
   double lumi  = 26.67;*/
 
   /*std::cout<<"period preBPix2023"<<std::endl;
-  string fDY   = "/eos/user/m/mmanoni/HZZ_samples23_newprod/MC_JetClean_Jes/PROD_samplesNano_2023preBPix_MC_3e5e00ec/DYJetsToLL/ZZ4lAnalysis.root";
-  string fTT   = "/eos/user/m/mmanoni/HZZ_samples23_newprod/MC_JetClean_Jes/PROD_samplesNano_2023preBPix_MC_3e5e00ec/TTto2L2Nu/ZZ4lAnalysis.root";
-  string fdata = "/eos/user/m/mmanoni/HZZ_samples23_newprod/Data_JetClean_Jes/PROD_samplesNano_2023_Data_3e5e00ec/Data_eraC_preBPix.root";
-  double lumi  = 17.8;*/
+  string fDY   = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2023preBPix_MC/PROD_samplesNano_2023preBPix_MC_cc84ce40/DYJetsToLL/ZZ4lAnalysis.root";
+  string fTT   = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2023preBPix_MC/PROD_samplesNano_2023preBPix_MC_cc84ce40/TTto2L2Nu/ZZ4lAnalysis.root";
+  string fdata = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2023_Data/PROD_samplesNano_2023_Data_cc84ce40/Data_eraC_preBPix.root";
+  double lumi  = 18.06;*/
 
-  /*std::cout<<"period preBPix2023"<<std::endl;
-  string fDY   = "/eos/user/m/mmanoni/HZZ_samples23_newprod/MC_updated_Trig_newJetID_oldEleSS/PROD_samplesNano_2023preBPix_MC_03abdca3/DYJetsToLL/ZZ4lAnalysis.root";
-  string fTT   = "/eos/user/m/mmanoni/HZZ_samples23_newprod/MC_updated_Trig_newJetID_oldEleSS/PROD_samplesNano_2023preBPix_MC_03abdca3/TTto2L2Nu/ZZ4lAnalysis.root";
-  string fdata = "/eos/user/m/mmanoni/HZZ_samples23_newprod/Data_updated_Trig_newJetID_oldEleSS/PROD_samplesNano_2023_Data_03abdca3/Data_eraC_preBPix.root";
-  double lumi  = 17.8;*/
-
-  /*std::cout<<"period postBPix2023"<<std::endl;
-  string fDY   = "/eos/user/m/mmanoni/HZZ_samples23_newprod/MC_JetClean_Jes/PROD_samplesNano_2023postBPix_MC_3e5e00ec/DYJetsToLL/ZZ4lAnalysis.root";
-  string fTT   = "/eos/user/m/mmanoni/HZZ_samples23_newprod/MC_JetClean_Jes/PROD_samplesNano_2023postBPix_MC_3e5e00ec/TTto2L2Nu/ZZ4lAnalysis.root";
-  string fdata = "/eos/user/m/mmanoni/HZZ_samples23_newprod/Data_JetClean_Jes/PROD_samplesNano_2023_Data_3e5e00ec/Data_eraD_postBPix.root";
-  double lumi  = 9.5;*/
+  std::cout<<"period postBPix2023"<<std::endl;
+  string fDY   = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2023postBPix_MC/PROD_samplesNano_2023postBPix_MC_cc84ce40/DYJetsToLL/ZZ4lAnalysis.root";
+  string fTT   = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2023postBPix_MC/PROD_samplesNano_2023postBPix_MC_cc84ce40/TTto2L2Nu/ZZ4lAnalysis.root";
+  string fdata = "/eos/user/m/mmanoni/HZZ_prod_241125_NoEleMuo_YesJetCorr/2023_Data/PROD_samplesNano_2023_Data_cc84ce40/Data_eraD_postBPix.root";
+  double lumi  = 9.69;
 
 
   ROOT::RDF::RResultPtr<TH1D> hist_DY;
@@ -383,12 +478,12 @@ void Jets_plots_scale_smear(){
   //std::cout << "Saving distributions into root file ..." << std::endl;
   //TFile * outfile = new TFile("{var}_histos.root", "RECREATE");
 
-  std::string subdir = "2022preEE/"; 
+  std::string subdir = "2023_postBPix_HF_final/"; 
   std::filesystem::create_directories(subdir);
 
 
   std::cout << "Saving distributions into root file ..." << std::endl;
-  std::string filename = subdir + var +"_"+ period + "_scale_smear_prova_cut50GeV_NoNorm.root";  // Concatenate the value of 'var' with the string
+  std::string filename = subdir + var +"_"+ period + "_scale_smear_Norm.root";  // Concatenate the value of 'var' with the string
   TFile *outfile = new TFile(filename.c_str(), "RECREATE");
 
   outfile    -> cd();
@@ -401,8 +496,8 @@ void Jets_plots_scale_smear(){
   outfile    -> Close();
   
 
-  TCanvas * canvas = new TCanvas();
-  std::string filename_plots = subdir + var +"_"+ period + "_plots_scale_smear_prova_cut50GeV_NoNorm";
+  TCanvas * canvas = new TCanvas("canvas","canvas",1200,900);
+  std::string filename_plots = subdir + var +"_"+ period + "_plots_scale_smear_JetID6";
   DrawRatioPlot(filename_plots, var_name, canvas,
                 hist_data.GetPtr(),
                 hist_DY.GetPtr(), hist_DY_up.GetPtr(), hist_DY_dn.GetPtr(), hist_DY_up_scale.GetPtr(), hist_DY_dn_scale.GetPtr(),
