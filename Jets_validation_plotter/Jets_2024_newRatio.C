@@ -30,245 +30,148 @@ std::vector<std::string> collect_root_files(const std::string& baseDir)
 
 
 // -----------------------------------------------------------------------------
-void DrawRatioPlot(string name, string var_name, TCanvas *c, TH1D *data, TH1D *MC, TH1D*MCUp, TH1D*MCDn, TH1D*MCUpscale, TH1D*MCDnscale, double _lumi){
-        std::cout << "[INFO] Starting DrawRatioPlot function for plot: " << name << std::endl;
-        std::cout << "[INFO] Lumi: " << _lumi << std::endl;
+void DrawRatioPlot(string name, string var_name, TCanvas *c,
+                   TH1D *data,
+                   TH1D *MC,
+                   TH1D *MCUp,
+                   TH1D *MCDn,
+                   TH1D *MCUpscale,
+                   TH1D *MCDnscale,
+                   double _lumi)
+{
+    gStyle->SetOptStat(0);
 
-        gStyle->SetOptStat(0);
+    // =========================================================
+    // 1) Normalize MC FIRST (important!)
+    // =========================================================
+    double scaleFactor = data->Integral() / MC->Integral();
 
-        std::cout << "Scale and smearing calculation start "<<std::endl;
-        // Sum uncertainties in quadrature
-        TH1D *MCUpFinal = new TH1D("MCUpFinal", "MCUpFinal", MC->GetSize() - 2, MC->GetXaxis()->GetXmin(), MC->GetXaxis()->GetXmax());
-        TH1D *MCDnFinal = new TH1D("MCDnFinal", "MCDnFinal", MC->GetSize() - 2, MC->GetXaxis()->GetXmin(), MC->GetXaxis()->GetXmax());
+    MC->Scale(scaleFactor);
+    MCUp->Scale(scaleFactor);
+    MCDn->Scale(scaleFactor);
+    MCUpscale->Scale(scaleFactor);
+    MCDnscale->Scale(scaleFactor);
 
-        for (int bin = 0; bin < MC->GetSize() - 2; bin++) {
-          // --- Nominal ---
-          double nom = MC->GetBinContent(bin + 1);
+    // =========================================================
+    // 2) Build total MC uncertainty envelopes
+    // =========================================================
+    TH1D *MCUpFinal = (TH1D*) MC->Clone("MCUpFinal");
+    TH1D *MCDnFinal = (TH1D*) MC->Clone("MCDnFinal");
 
-          // --- Compute shifts (signed deviations) ---
-          double dJECup     = MCUp->GetBinContent(bin + 1)     - nom;
-          double dJECdn     = MCDn->GetBinContent(bin + 1)     - nom;
-          double dScaleUp   = MCUpscale->GetBinContent(bin + 1) - nom;
-          double dScaleDn   = MCDnscale->GetBinContent(bin + 1) - nom;
+    MCUpFinal->Reset();
+    MCDnFinal->Reset();
 
-          // --- Quadrature accumulators ---
-          double up2 = 0.0;
-          double dn2 = 0.0;
+    for (int bin = 1; bin <= MC->GetNbinsX(); bin++) {
 
-          // Helper to accumulate by sign
-          auto accumulate = [&](double d) {
-              if (d > 0) up2 += d*d;
-              else       dn2 += d*d;
-          };
+        double nom = MC->GetBinContent(bin);
+        double mc_stat = MC->GetBinError(bin);  // sqrt(sum w^2)
 
-          // --- Add *all* signed variations ---
-          accumulate(dJECup);
-          accumulate(dJECdn);
-          accumulate(dScaleUp);
-          accumulate(dScaleDn);
+        double dJEC_up   = MCUp->GetBinContent(bin)      - nom;
+        double dJER_up   = MCUpscale->GetBinContent(bin) - nom;
+        double dJEC_down = nom - MCDn->GetBinContent(bin);
+        double dJER_down = nom - MCDnscale->GetBinContent(bin);
 
-          // --- Include MC statistical uncertainty ---
-          double mc_stat = MC->GetBinError(bin + 1);
-          up2 += mc_stat * mc_stat;
-          dn2 += mc_stat * mc_stat;
+        double total_up = std::sqrt(mc_stat*mc_stat +
+                                    dJEC_up*dJEC_up +
+                                    dJER_up*dJER_up);
 
-          // --- Final uncertainties ---
-          double total_up = sqrt(up2);
-          double total_dn = sqrt(dn2);
+        double total_dn = std::sqrt(mc_stat*mc_stat +
+                                    dJEC_down*dJEC_down +
+                                    dJER_down*dJER_down);
 
-          // --- Set final MC uncertainty envelopes ---
-          MCUpFinal->SetBinContent(bin + 1, nom + total_up);
-          MCDnFinal->SetBinContent(bin + 1, nom - total_dn);
+        MCUpFinal->SetBinContent(bin, nom + total_up);
+        MCDnFinal->SetBinContent(bin, std::max(0.0, nom - total_dn));
+    }
 
-          // --- Print debug ---
-          std::cout << "Bin " << bin+1
-                    << ": nom=" << nom
-                    << "  dJECup="   << dJECup
-                    << "  dJECdn="   << dJECdn
-                    << "  dScaleUp=" << dScaleUp
-                    << "  dScaleDn=" << dScaleDn
-                    << "  total_up=" << total_up
-                    << "  total_dn=" << total_dn
-                    << std::endl;
+    // =========================================================
+    // 3) Canvas & top pad (unchanged logic)
+    // =========================================================
+    c->Divide(1,2);
+
+    c->cd(1);
+    gPad->SetBottomMargin(0.02);
+    gPad->SetTopMargin(0.18);
+    gPad->SetLeftMargin(0.10);
+
+    MC->SetFillColor(TColor::GetColor("#6baed6"));
+    MC->SetLineColor(TColor::GetColor("#2171b5"));
+    MC->SetLineWidth(2);
+    MC->Draw("HIST");
+
+    data->SetMarkerStyle(20);
+    data->SetMarkerSize(0.8);
+    data->Draw("P SAME");
+
+    CMS_lumi cms;
+    cms.set_lumi((TPad*)gPad, _lumi);
+
+    // =========================================================
+    // 4) Ratio pad — EXACT Python equivalent
+    // =========================================================
+    c->cd(2);
+    gPad->SetBottomMargin(0.20);
+    gPad->SetTopMargin(0.02);
+    gPad->SetLeftMargin(0.10);
+
+    // --- Data / MC ---
+    TH1D *Ratio = (TH1D*) data->Clone("Ratio");
+    Ratio->Divide(MC);
+    Ratio->SetMarkerStyle(20);
+    Ratio->SetMarkerSize(0.8);
+
+    // --- Ratio uncertainty band ---
+    TH1D *ratio_band_up = (TH1D*) MCUpFinal->Clone("ratio_band_up");
+    TH1D *ratio_band_dn = (TH1D*) MCDnFinal->Clone("ratio_band_dn");
+
+    for (int bin = 1; bin <= MC->GetNbinsX(); bin++) {
+
+        double mc = MC->GetBinContent(bin);
+        if (mc <= 0) {
+            ratio_band_up->SetBinContent(bin, 1.0);
+            ratio_band_dn->SetBinContent(bin, 1.0);
+            continue;
         }
 
-        // Normalize MC to data
-        double dataIntegral = data->Integral();
-        double mcIntegral = MC->Integral();
-        double scaleFactor = dataIntegral / mcIntegral;
-        //double scaleFactor = 1.0;
-        MC->Scale(scaleFactor);
-        MCUp->Scale(scaleFactor);
-        MCDn->Scale(scaleFactor);
-        MCUpscale->Scale(scaleFactor);
-        MCDnscale->Scale(scaleFactor);
-        MCUpFinal->Scale(scaleFactor);
-        MCDnFinal->Scale(scaleFactor);
+        ratio_band_up->SetBinContent(bin, MCUpFinal->GetBinContent(bin) / mc);
+        ratio_band_dn->SetBinContent(bin, MCDnFinal->GetBinContent(bin) / mc);
+    }
 
-        //Splits the canvas into two vertical pads
-        c->Divide(0,2,0,0);
-        // TPad * pad1 = new TPad("pad1","pad1", 0, 0.3, 1, 1.0);
-        // pad1->Draw();
-        c->cd(1);
+    ratio_band_up->SetFillColor(kGray+1);
+    ratio_band_up->SetLineColor(kGray+1);
+    ratio_band_up->SetMinimum(0.5);
+    ratio_band_up->SetMaximum(1.5);
+    ratio_band_up->GetYaxis()->SetTitle("Data / MC");
+    ratio_band_up->Draw("HIST");
 
+    ratio_band_dn->SetFillColor(kGray);
+    ratio_band_dn->SetLineColor(kGray);
+    ratio_band_dn->Draw("HIST SAME");
 
-        gPad->SetBottomMargin(0.02);
-        gPad->SetTopMargin(0.18);
-        gPad->SetLeftMargin(0.10);
-        
-        //***Main Histogram Plot (Top Panel)***
+    Ratio->Draw("P SAME");
 
+    TLine *line = new TLine(
+        Ratio->GetXaxis()->GetXmin(), 1.0,
+        Ratio->GetXaxis()->GetXmax(), 1.0
+    );
+    line->SetLineStyle(2);
+    line->Draw();
 
-        //MC->SetTitle("");
-        //data->SetTitle("");
-        //MCUpFinal->SetTitle("");
-        //MCDnFinal->SetTitle("");
+    // =========================================================
+    // 5) Legend
+    // =========================================================
+    c->cd(1);
+    TLegend *leg = new TLegend(0.64,0.45,0.85,0.75);
+    leg->SetBorderSize(0);
+    leg->SetFillStyle(0);
+    leg->AddEntry(MC, "DY + t#bar{t} MC", "f");
+    leg->AddEntry(data, "Data", "p");
+    leg->AddEntry(ratio_band_up, "Stat. ⊕ Syst.", "f");
+    leg->Draw();
 
-        double max = 0.;
-        for (int bin = 0; bin < MC->GetSize() - 2; bin++){
-          if ( MC->GetBinContent(bin + 1) > max) max = MC->GetBinContent(bin + 1);
-        }
-        MC->SetMaximum(1.4*max); //Scales the y-axis maximum to 140% of the largest bin for better visibility.
-
-        
-        // CMS-TDR inspired colors
-        MC->SetFillColor(TColor::GetColor("#6baed6"));   // soft blue
-        MC->SetLineColor(TColor::GetColor("#2171b5"));   // darker blue outline
-        MC->SetLineWidth(2);
-        double binWidth = MC->GetXaxis()->GetBinWidth(1); 
-        TString yAxisLabel = TString::Format("Events/%.2f", binWidth);
-        MC->GetYaxis()->SetTitle(yAxisLabel);
-        MC->Draw("HIST");
-        MC->GetXaxis()->SetLabelSize(0);
-        MC->GetYaxis()->SetTitleSize(0.07);
-        MC->GetYaxis()->SetLabelSize(0.07);
-        MC->GetYaxis()->SetTitleOffset(10.);
-
-        MC->GetYaxis()->SetNoExponent(kFALSE);  // allow 10^x
-        MC->GetYaxis()->SetMoreLogLabels(kTRUE);
-        MC->GetYaxis()->SetMaxDigits(2);
-
-        MC->GetXaxis()->SetLabelSize(0); // hide x labels on top
-
-
-        std::cout << "Scale and smearing calculation end "<<std::endl;
-        data->SetMarkerStyle(20);
-        data->SetMarkerColor(kBlack);
-        data->SetLineColor(kBlack);
-        data->SetMarkerSize(0.8);
-        data->Draw("P SAME");
-
-
-        // ---- CMS label ----
-        CMS_lumi cms;
-        cms.set_lumi((TPad*)gPad, _lumi);
-
-
-        MC->SetTitle("");
-        data->SetTitle("");
-        MCUpFinal->SetTitle("");
-        MCDnFinal->SetTitle("");
-        
-        //***Ratio Plot (Bottom Panel)***
-        c->cd(2);
-
-        gPad->SetBottomMargin(0.20);
-        gPad->SetTopMargin(0.02);
-        gPad->SetLeftMargin(0.10);
-
-        TH1F * Ratio = new TH1F("Ratio","Ratio", MC->GetSize() - 2, MC->GetXaxis()->GetXmin(), MC->GetXaxis()->GetXmax());
-        TH1F * sigma_up = new TH1F("sigma_up","sigma_up", MC->GetSize() - 2, MC->GetXaxis()->GetXmin(), MC->GetXaxis()->GetXmax());
-        TH1F * sigma_dn = new TH1F("sigma_dn","sigma_dn", MC->GetSize() - 2, MC->GetXaxis()->GetXmin(), MC->GetXaxis()->GetXmax());
-
-        for(int bin = 1; bin <= MC->GetNbinsX(); bin++){
-            double mcVal   = MC->GetBinContent(bin);
-            double dataVal = data->GetBinContent(bin);
-            double dataErr = data->GetBinError(bin);
-
-            if(mcVal < 1e-6){
-                Ratio->SetBinContent(bin, 0);
-                Ratio->SetBinError(bin, 0);
-                sigma_up->SetBinContent(bin, 0);
-                sigma_dn->SetBinContent(bin, 0);
-            } else {
-                // Fractional ratio and data error
-                Ratio->SetBinContent(bin, dataVal / mcVal - 1);
-                Ratio->SetBinError(bin, 0);
-
-                // Fractional MC systematic uncertainties
-                sigma_up->SetBinContent(bin, MCUpFinal->GetBinContent(bin) / mcVal - 1);
-                sigma_dn->SetBinContent(bin, MCDnFinal->GetBinContent(bin) / mcVal - 1);
-            }
-        }
-
-        std::cout << "[INFO] Fractional MC uncertainties (sigma_up, sigma_dn):" << std::endl;
-        for(int bin = 1; bin <= MC->GetNbinsX(); bin++){
-            double sigmaUpVal = sigma_up->GetBinContent(bin);
-            double sigmaDnVal = sigma_dn->GetBinContent(bin);
-            std::cout << "Bin " << bin 
-                      << ": sigma_up = " << sigmaUpVal 
-                      << ", sigma_dn = " << sigmaDnVal << std::endl;
-        }
-
-        Ratio->SetTitle("");
-        sigma_up->SetTitle("");
-        sigma_dn->SetTitle("");
-
-        sigma_up->SetTitle("");
-        sigma_up->SetFillColor(kGray+2);
-        sigma_up->SetLineColor(kGray+2);
-        sigma_up->SetMaximum(1.0);
-        sigma_up->SetMinimum(-1.0);
-        std::string ytitle_plots = "Leading Jet " + var_name;
-        sigma_up->GetXaxis()->SetTitle(ytitle_plots.c_str());
-        sigma_up->GetYaxis()->SetTitle("Data/MC");
-        sigma_up->GetYaxis()->SetTitleOffset(10.);
-        sigma_up->Draw("HIST");
-        sigma_up->GetXaxis()->SetLabelSize(0.07);
-        sigma_up->GetXaxis()->SetTitleSize(0.07);
-        sigma_up->GetYaxis()->SetLabelSize(0.07);
-        sigma_up->GetYaxis()->SetTitleSize(0.07);
-
-        sigma_dn->SetFillColor(kGray);
-        sigma_dn->SetLineColor(kGray);
-        sigma_dn->Draw("HIST SAME");
-
-        gPad->RedrawAxis();
-
-        Ratio->SetMarkerStyle(20);
-        Ratio->SetMarkerSize(0.8);
-        Ratio->Draw("P SAME");
-
-
-        double x_min = Ratio->GetXaxis()->GetXmin();
-        double x_max = Ratio->GetXaxis()->GetXmax();
-        TLine *line0 = new TLine(x_min, 0, x_max, 0);
-        line0->SetLineColor(kBlack);  // or kBlack
-        line0->SetLineStyle(2);     // dashed line
-        line0->SetLineWidth(2);
-        line0->Draw("SAME");
-
-        c->cd(1);
-        TLegend * leg = new TLegend(0.64,0.45,0.85,0.75);
-        leg->SetBorderSize(0);
-        leg->SetFillColor(0);
-        leg->SetFillStyle(0);
-        leg->SetTextFont(42);
-        leg->SetTextSize(0.07);
-        leg->AddEntry(MC, "DY + t#bar{t}  MC", "f" );
-        leg->AddEntry(data, "Data", "p");
-        //leg->AddEntry(UncertaintyBand, "Uncertainty Band", "f");
-        leg->AddEntry(sigma_up, "Stat.+Syst Unc.", "f");
-        leg->Draw();
-
-        c->Update();
-
-        c->SaveAs((TString)name+".pdf");
-        c->SaveAs((TString)name+".png");
-        c->SaveAs((TString)name+".C");
-
-        c->Clear();
+    c->SaveAs((TString)name + ".pdf");
+    c->SaveAs((TString)name + ".png");
 }
+
 
 
 // -----------------------------------------------------------------------------
@@ -343,11 +246,15 @@ auto Histo_MC(const std::vector<std::string>& files, double _lumi,
         .Define("leadPtDownscale", computeLeadJet, {"SortedJet_pt", "SortedJet_scaleDn_pt"});
 
     auto h_nom = skim.Histo1D({(var+"_MC").c_str(), (var+"_MC").c_str(), bins, xmin, xmax}, var, "weight");
+    h_nom->Sumw2();
     auto h_up  = skim.Histo1D({(var+"Up_MC").c_str(), (var+"Up_MC").c_str(), bins, xmin, xmax}, var+"Up", "weight");
+    h_up->Sumw2();
     auto h_dn  = skim.Histo1D({(var+"Down_MC").c_str(), (var+"Down_MC").c_str(), bins, xmin, xmax}, var+"Down", "weight");
+    h_dn->Sumw2();
     auto hist_up_scale = skim.Histo1D({(var + "Up_MC_scale").c_str(), (var + "Up_MC_scale").c_str(), bins, xmin, xmax}, var + "Upscale", "weight");
+    hist_up_scale->Sumw2();
     auto hist_dn_scale = skim.Histo1D({(var + "Down_MC_scale").c_str(), (var + "Down_MC_scale").c_str(), bins, xmin, xmax}, var + "Downscale", "weight"); 
-
+    hist_dn_scale->Sumw2();
     return std::make_tuple(h_nom, h_up, h_dn, hist_up_scale, hist_dn_scale);
 }
 

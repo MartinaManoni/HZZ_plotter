@@ -1,4 +1,4 @@
-// Martina Manoni plotter for Jet control plots
+// Martina Manoni plotter for Jet control plots, reads hadded files 
 #include "CMS_lumi.C"
 #include <tuple>
 #include <vector>
