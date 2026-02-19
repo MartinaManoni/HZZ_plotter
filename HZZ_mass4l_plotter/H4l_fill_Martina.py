@@ -5,7 +5,7 @@ import argparse
 import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
-from ZZAnalysis.NanoAnalysis.tools import getLeptons, get_genEventSumw
+#from ZZAnalysis.NanoAnalysis.tools import getLeptons, get_genEventSumw
 
 
 # python fill_histos.py --mode data --period 2022
@@ -32,7 +32,42 @@ maxEntriesPerSample = 1e12
 ROOT.TH1.SetDefaultSumw2()
 
 
+def get_genEventSumw(input_file, maxEntriesPerSample=None):
+    '''
+       Util function to get the sum of weights per event.
+       Returns the sum of weights, similarly to what we
+       stored in Counters->GetBinContent(40) in the miniAODs.
+    '''
+    f = input_file
+
+    runs  = f.Runs
+    event = f.Events
+    nRuns = runs.GetEntries()
+    nEntries = event.GetEntries()
+
+    iRun = 0
+    genEventCount = 0
+    genEventSumw = 0.
+
+    while iRun < nRuns and runs.GetEntry(iRun) :
+        genEventCount += runs.genEventCount
+        genEventSumw += runs.genEventSumw
+        iRun +=1
+    print ("gen=", genEventCount, "sumw=", genEventSumw)
+
+    if maxEntriesPerSample is not None:
+        print(f"Scaling to {maxEntriesPerSample} entries")
+        if nEntries>maxEntriesPerSample :
+            genEventSumw = genEventSumw*maxEntriesPerSample/nEntries
+            nEntries=maxEntriesPerSample
+        print("    scaled to:", nEntries, "sumw=", genEventSumw)
+
+    return genEventSumw
+
 def fill_histograms(samplename, filename):
+    ### ---------------------    
+    ## ZZMass
+
     h_ZZMass2 = ROOT.TH1F("ZZMass_2GeV_" + samplename, "ZZMass_2GeV_" + samplename, 65, 70., 200.)
     h_ZZMass2.GetXaxis().SetTitle("m_{#it{4l}} (GeV)")
     h_ZZMass2.GetYaxis().SetTitle("Events / 2 GeV")
@@ -54,6 +89,53 @@ def fill_histograms(samplename, filename):
     h_ZZMass10.GetXaxis().SetTitle("m_{#it{4l}} (GeV)")
     h_ZZMass10.GetYaxis().SetTitle("Events / 10 GeV")
 
+
+    ### ---------------------    
+    ## Z1 and Z2 masses
+    # Z1
+    h_Z1Mass = ROOT.TH1F("Z1Mass_"+samplename,
+                         "Z1Mass_"+samplename,40,40.,120.)
+    h_Z1Mass.GetXaxis().SetTitle("m_{#it{Z1}} (GeV)")
+    h_Z1Mass.GetYaxis().SetTitle("Events / 2 GeV")
+    #4mu
+    h_Z1Mass_4mu = ROOT.TH1F("Z1Mass_4mu_"+samplename,
+                             "Z1Mass_4mu_"+samplename,40,40.,120.)
+    h_Z1Mass_4mu.GetXaxis().SetTitle("m_{#it{Z1}} (GeV)")
+    h_Z1Mass_4mu.GetYaxis().SetTitle("Events / 2 GeV")
+    #4e
+    h_Z1Mass_4e = ROOT.TH1F("Z1Mass_4e_"+samplename,
+                            "Z1Mass_4e_"+samplename,40,40.,120.)
+    h_Z1Mass_4e.GetXaxis().SetTitle("m_{#it{Z1}} (GeV)")
+    h_Z1Mass_4e.GetYaxis().SetTitle("Events / 2 GeV")
+    #2e2mu
+    h_Z1Mass_2e2mu = ROOT.TH1F("Z1Mass_2e2mu_"+samplename,
+                               "Z1Mass_2e2mu_"+samplename,40,40.,120.)
+    h_Z1Mass_2e2mu.GetXaxis().SetTitle("m_{#it{Z1}} (GeV)")
+    h_Z1Mass_2e2mu.GetYaxis().SetTitle("Events / 2 GeV")
+
+    ### ---------------------    
+    # Z2
+    h_Z2Mass = ROOT.TH1F("Z2Mass_"+samplename,
+                         "Z2Mass_"+samplename,54,12.,120.)
+    h_Z2Mass.GetXaxis().SetTitle("m_{#it{Z2}} (GeV)")
+    h_Z2Mass.GetYaxis().SetTitle("Events / 2 GeV")
+    #4mu
+    h_Z2Mass_4mu = ROOT.TH1F("Z2Mass_4mu_"+samplename,
+                             "Z2Mass_4mu_"+samplename,54,12.,120.)
+    h_Z2Mass_4mu.GetXaxis().SetTitle("m_{#it{Z2}} (GeV)")
+    h_Z2Mass_4mu.GetYaxis().SetTitle("Events / 2 GeV")
+    #4e
+    h_Z2Mass_4e = ROOT.TH1F("Z2Mass_4e_"+samplename,
+                            "Z2Mass_4e_"+samplename,54,12.,120.)
+    h_Z2Mass_4e.GetXaxis().SetTitle("m_{#it{Z2}} (GeV)")
+    h_Z2Mass_4e.GetYaxis().SetTitle("Events / 2 GeV")
+    #2e2mu
+    h_Z2Mass_2e2mu = ROOT.TH1F("Z2Mass_2e2mu_"+samplename,
+                               "Z2Mass_2e2mu_"+samplename,54,12.,120.)
+    h_Z2Mass_2e2mu.GetXaxis().SetTitle("m_{#it{Z2}} (GeV)")
+    h_Z2Mass_2e2mu.GetYaxis().SetTitle("Events / 2 GeV")
+
+    #-------------------------------------------------------------------------
     f = ROOT.TFile.Open(filename)
     event = f.Events
     event.SetBranchStatus("*", 0)
@@ -94,25 +176,38 @@ def fill_histograms(samplename, filename):
         h_ZZMass4.Fill(m4l, weight)
         h_ZZMass10.Fill(m4l, weight)
 
+        ## Z1Mass
+        mZ1=theZZ.Z1mass
+        h_Z1Mass.Fill(mZ1,weight)
+        ## Z2Mass
+        mZ2=theZZ.Z2mass
+        h_Z2Mass.Fill(mZ2,weight)
+
         Z1flav, Z2flav = theZZ.Z1flav, theZZ.Z2flav
         #print("Z1flav", Z1flav)
         if Z1flav == -169 and Z2flav == -169:
             #print("4mu")
             h_ZZMass2_4mu.Fill(m4l, weight)
             h_ZZMass4_4mu.Fill(m4l, weight)
+            h_Z1Mass_4mu.Fill(mZ1,weight)
+            h_Z2Mass_4mu.Fill(mZ2,weight)
         elif Z1flav == -121 and Z2flav == -121:
             #print("4e")
             h_ZZMass2_4e.Fill(m4l, weight)
             h_ZZMass4_4e.Fill(m4l, weight)
+            h_Z1Mass_4e.Fill(mZ1,weight)
+            h_Z2Mass_4e.Fill(mZ2,weight)
         elif (Z1flav == -169 and Z2flav == -121) or (Z1flav == -121 and Z2flav == -169):
             #print("2e2mu")
             h_ZZMass2_2e2mu.Fill(m4l, weight)
             h_ZZMass4_2e2mu.Fill(m4l, weight)
+            h_Z1Mass_2e2mu.Fill(mZ1,weight)
+            h_Z2Mass_2e2mu.Fill(mZ2,weight)
         else:
             print(f"Warning: unexpected Z flavors {Z1flav}, {Z2flav}")
 
     f.Close()
-    return h_ZZMass2, h_ZZMass4, h_ZZMass2_4mu, h_ZZMass4_4mu, h_ZZMass2_4e, h_ZZMass4_4e, h_ZZMass2_2e2mu, h_ZZMass4_2e2mu
+    return h_ZZMass2, h_ZZMass4, h_ZZMass2_4mu, h_ZZMass4_4mu, h_ZZMass2_4e, h_ZZMass4_4e, h_ZZMass2_2e2mu, h_ZZMass4_2e2mu, h_Z1Mass, h_Z1Mass_4mu, h_Z1Mass_4e, h_Z1Mass_2e2mu, h_Z2Mass, h_Z2Mass_4mu, h_Z2Mass_4e, h_Z2Mass_2e2mu
 
 
 def run_data(period):

@@ -87,6 +87,14 @@ Z_FLAVORS = {
     "2e2mu": [(-169, -121), (-121, -169)],
 }
 
+LUMI = {
+    "2022": 7.98, # fb^-1
+    "2022EE": 26.67,
+    "2023preBPix": 18.06,
+    "2023postBPix": 9.69,
+    "2024": 108.82,
+}
+
 def get_genEventSumw(input_file, maxEntriesPerSample=None):
     '''
        Util function to get the sum of weights per event.
@@ -118,6 +126,106 @@ def get_genEventSumw(input_file, maxEntriesPerSample=None):
         print("    scaled to:", nEntries, "sumw=", genEventSumw)
 
     return genEventSumw
+
+
+def compute_m4l_yields_105_160(
+    mc_files,
+    year,
+    zx_file=None,
+    m4l_min=105.0,
+    m4l_max=160.0
+):
+    """
+    Compute yields in 105 < m4l < 160 for:
+      - qqZZ
+      - ggZZ
+      - ZX
+      - Signal (Higgs)
+
+    mc_files: dict { sample_name : filepath }
+    zx_file: path to ZX root file (candTree)
+    """
+    print(f"[INFO] Computing yields")
+
+
+    lumi = LUMI[year]
+    print(f"[INFO] Using lumi = {lumi} fb^-1 for year {year}")
+    
+    # --- Sample grouping ---
+    qqZZ_samples = [
+        "ZZTo4l"
+    ]
+
+    ggZZ_samples = [
+        "ggTo4mu_Contin_MCFM701",
+        "ggTo4e_Contin_MCFM701",
+        "ggTo2e2mu_Contin_MCFM701",
+        "ggTo4tau_Contin_MCFM701",
+        "ggTo2e2tau_Contin_MCFM701",
+        "ggTo2mu2tau_Contin_MCFM701",
+    ]
+
+    signal_samples = [
+        "ggH125", "VBFH125", "WplusH125", "WminusH125", "ZH125", "ttH125"
+    ]
+
+    yields = {
+        "qqZZ": 0.0,
+        "ggZZ": 0.0,
+        "Signal": 0.0,
+        "ZX": 0.0,
+    }
+
+    # --- Loop over MC ---
+    for sample, filepath in mc_files.items():
+        if not os.path.exists(filepath):
+            continue
+
+        df = ROOT.RDataFrame("Events", filepath)
+        df = (
+            df.Filter("bestCandIdx != -1")
+              .Filter("HLT_passZZ4l")
+              .Define("m4l", "ZZCand_mass[bestCandIdx]")
+        )
+
+        # weights
+        f = ROOT.TFile.Open(filepath)
+        genEventSumw = get_genEventSumw(f, 1e12)
+        f.Close()
+
+        df = df.Define(
+            "weight",
+            f"overallEventWeight * ZZCand_dataMCWeight * {lumi} * 1000. / {genEventSumw}"
+        )
+
+        df = df.Filter(f"m4l > {m4l_min} && m4l < {m4l_max}")
+
+        y = df.Sum("weight").GetValue()
+
+        if sample in qqZZ_samples:
+            yields["qqZZ"] += y
+        elif sample in ggZZ_samples:
+            yields["ggZZ"] += y
+        elif sample in signal_samples:
+            yields["Signal"] += y
+
+    # --- ZX ---
+    if zx_file and os.path.exists(zx_file):
+        df_zx = ROOT.RDataFrame("candTree", zx_file)
+        df_zx = (
+            df_zx.Define("m4l", "ZZMass")
+                 .Define("weight", "weight1")
+                 .Filter(f"m4l > {m4l_min} && m4l < {m4l_max}")
+        )
+
+        yields["ZX"] = df_zx.Sum("weight").GetValue()
+
+    # --- Print summary ---
+    print("\n=== m4l yields (105–160 GeV) ===")
+    for k, v in yields.items():
+        print(f"{k:8s}: {v:.3f}")
+
+    return yields
 
 def define_histograms(df, df_SR, samplename, isMC):
     histos = {}
@@ -279,7 +387,7 @@ def run_sample(sample_name, filepaths, output_file, isMC=True):
            .Define("Z1flav", "ZZCand_Z1flav[bestCandIdx]") \
            .Define("Z2flav", "ZZCand_Z2flav[bestCandIdx]")
 
-    df_SR = df.Filter("m4l >= 105 && m4l <= 160")
+    df_SR = df.Filter("m4l > 118 && m4l < 130")
 
     histos = define_histograms(df, df_SR, sample_name, isMC)
 
@@ -312,7 +420,7 @@ def run_zx(period):
            .Define("finState", "FinState") \
            .Define("weight", "weight1")
 
-    df_SR = df.Filter("m4l >= 105 && m4l <= 160")
+    df_SR = df.Filter("m4l > 118 && m4l < 130")
 
     fout = ROOT.TFile.Open(f"H4l_ZX_{period}_RDF.root", "RECREATE")
     histos = define_histograms(df, df_SR, "ZX", isMC=True)
@@ -365,32 +473,50 @@ def run_mc(period):
         raise ValueError(f"Unknown MC period: {period}")
 
     samples = [
-        "WWZ", "WZZ", "ZZZ", "ggTo4mu_Contin_MCFM701", "ggTo4e_Contin_MCFM701", "ggTo4tau_Contin_MCFM701",
-        "ggTo2e2mu_Contin_MCFM701", "ggTo2e2tau_Contin_MCFM701", "ggTo2mu2tau_Contin_MCFM701", "ZZTo4l",
-        "VBFH125", "ggH125", "WplusH125", "WminusH125", "ZH125", "ttH125"
+        "WWZ", "WZZ", "ZZZ",
+        "ggTo4mu_Contin_MCFM701", "ggTo4e_Contin_MCFM701",
+        "ggTo4tau_Contin_MCFM701", "ggTo2e2mu_Contin_MCFM701",
+        "ggTo2e2tau_Contin_MCFM701", "ggTo2mu2tau_Contin_MCFM701",
+        "ZZTo4l",
+        "VBFH125", "ggH125", "WplusH125", "WminusH125",
+        "ZH125", "ttH125"
     ]
 
     fout = ROOT.TFile.Open(f"H4l_MC_{period}_RDF.root", "RECREATE")
+
+    # ------------------------------------------------
+    # 1) Collect MC files
+    # ------------------------------------------------
+    mc_files = {}
     for sample in samples:
         filename = os.path.join(path, sample, "ZZ4lAnalysis.root")
-        if not os.path.exists(filename):
-            print(f"[WARNING] File not found for sample {sample}: {filename}")
-            continue
+        if os.path.exists(filename):
+            mc_files[sample] = filename
+        else:
+            print(f"[WARNING] File not found for sample {sample}")
 
+    # ------------------------------------------------
+    # 2) Compute yields once
+    # ------------------------------------------------
+    compute_m4l_yields_105_160(
+        mc_files,
+        period,
+        zx_file=ZX_PATHS.get(period)
+    )
+
+    # ------------------------------------------------
+    # 3) Run histogram production
+    # ------------------------------------------------
+    for sample, filename in mc_files.items():
         print(f"[INFO] Processing {sample} from 1 file")
-
-        # Minimal fix: pass the filename string, not a list
-        '''f = ROOT.TFile.Open(filename)
-        genEventSumw = get_genEventSumw(f, 1e12)
-        f.Close()'''
-
         run_sample(sample, filename, fout, isMC=True)
+
     fout.Close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["data", "mc", "zx", "both"], default="all")
-    parser.add_argument("--period", choices=["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"], default="2023postBPix")
+    parser.add_argument("--period", choices=["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"], default="2022EE")
     args = parser.parse_args()
 
     if args.mode == "data":
