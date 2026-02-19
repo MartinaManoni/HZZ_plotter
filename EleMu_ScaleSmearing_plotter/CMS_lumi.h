@@ -22,7 +22,7 @@ public:
 private:
       
    TString CMS_text, lumi_text;
-   TString lumi_sqrt = " fb^{-1} (13 TeV)";
+   TString lumi_sqrt = " fb^{-1} (13.6 TeV)";
    
    int CMS_text_font = 62;
    int extra_text_font = 52;

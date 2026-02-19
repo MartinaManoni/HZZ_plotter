@@ -55,7 +55,7 @@ void CMS_lumi::set_lumi( TPad* pad, float lumi )
 
    latex.SetTextAlign(11);
    latex.SetTextSize(cms_text_size*t);
-   // CMS_text = Form("#font[%i]{CMS} #scale[%.2f]{#font[%i]{Preliminary}}", CMS_text_font, extra_over_CMS_text_size, extra_text_font);
-   CMS_text = Form("#font[%i]{CMS} #scale[%.2f]{#font[%i]{Private work}}", CMS_text_font, extra_over_CMS_text_size, extra_text_font);
+   CMS_text = Form("#font[%i]{CMS} #scale[%.2f]{#font[%i]{Preliminary}}", CMS_text_font, extra_over_CMS_text_size, extra_text_font);
+   //CMS_text = Form("#font[%i]{CMS} #scale[%.2f]{#font[%i]{Private work}}", CMS_text_font, extra_over_CMS_text_size, extra_text_font);
    latex.DrawLatex(l, 1-t+cms_text_offset*t, CMS_text);
 }

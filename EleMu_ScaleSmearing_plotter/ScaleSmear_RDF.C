@@ -1,6 +1,7 @@
 // ============================================================================
 // ScaleSmear_RDF.C
-// Full corrected version of Matteo Bonanomi's python analysis using ROOT RDataFrame
+// Full corrected version of Matteo Bonanomi's python analysis
+// + MC stat ⊕ scale ⊕ resolution uncertainty band in ratio
 // ============================================================================
 
 #include <ROOT/RDataFrame.hxx>
@@ -10,7 +11,9 @@
 #include <TCanvas.h>
 #include <TLegend.h>
 #include <TLatex.h>
+#include <TColor.h>
 #include <iostream>
+#include <cmath>
 #include "CMS_lumi.h"
 #include "CMS_lumi.C"
 
@@ -22,8 +25,8 @@ using namespace ROOT::VecOps;
 bool selectChannel(int zflav, const std::string &CHANNEL) {
     int zf = std::abs(zflav);
 
-    if (CHANNEL == "mu") return (zf == 169);
-    if (CHANNEL == "e") return (zf == 121);
+    if (CHANNEL == "mu")   return (zf == 169);
+    if (CHANNEL == "e")    return (zf == 121);
     if (CHANNEL == "incl") return (zf == 169 || zf == 121);
 
     throw std::runtime_error("Invalid channel");
@@ -45,30 +48,28 @@ double getGenEventSumw(const std::string &fname) {
     }
 
     double genEventSumw = 0;
-    Long64_t genEventCountSum = 0;
-
     double sumw;
     Long64_t cnt;
 
     Runs->SetBranchAddress("genEventSumw", &sumw);
     Runs->SetBranchAddress("genEventCount", &cnt);
 
-    for (Long64_t i=0; i<Runs->GetEntries(); i++) {
+    for (Long64_t i = 0; i < Runs->GetEntries(); i++) {
         Runs->GetEntry(i);
-        genEventSumw     += sumw;
-        genEventCountSum += cnt;
+        genEventSumw += sumw;
     }
 
-    std::cout << "File: " << fname 
-              << "  genEventSumw=" << genEventSumw
-              << "  genEventCount=" << genEventCountSum << std::endl;
+    std::cout << "File: " << fname
+              << "  genEventSumw=" << genEventSumw << std::endl;
 
-    return genEventSumw;  // we only use sumw downstream
+    return genEventSumw;
 }
 
 // ------------------------------------------------------------
-// Lambda to extract Z1 mass and flavor
-auto pickZ1 = [](short bestZIdx, const RVec<float>& Zmass, const RVec<int>& Zflav) {
+// Lambdas
+auto pickZ1 = [](short bestZIdx,
+                 const RVec<float>& Zmass,
+                 const RVec<int>& Zflav) {
     if (bestZIdx < 0 || bestZIdx >= (int)Zmass.size()) return -1.f;
     return Zmass[bestZIdx];
 };
@@ -88,7 +89,16 @@ void ScaleSmear_RDF() {
     // --------------------------
     std::string YEAR    = "2022preEE";
     std::string CHANNEL = "mu";
-    double lumi         = 7.98;  // fb^-1 for 2022 preEE
+    double lumi         = 7.98;  // fb^-1
+
+    // --------------------------
+    // CONSTANT SYSTEMATICS (Python values)
+    // --------------------------
+    //double scale_value = 0.0025;  // scale
+    //double res_value   = 0.07;    // resolution
+
+    double scale_value = 0.0005;  // scale
+    double res_value   = 0.025;    // resolution
 
     // --------------------------
     // File paths
@@ -108,11 +118,8 @@ void ScaleSmear_RDF() {
     double cnt_tt = getGenEventSumw(fname_tt);
     double cnt_wz = getGenEventSumw(fname_wz);
 
-    if (cnt_dy == 0 || cnt_tt == 0 || cnt_wz == 0)
-        throw std::runtime_error("genEventSumw = 0 for some sample!");
-
     // --------------------------
-    // Define histogram binning
+    // Histogram binning
     // --------------------------
     const int NBINS = 99;
     const double XMIN = 60;
@@ -123,6 +130,12 @@ void ScaleSmear_RDF() {
     TH1D *hWZ = new TH1D("hWZ","",NBINS,XMIN,XMAX);
     TH1D *hDT = new TH1D("hDT","",NBINS,XMIN,XMAX);
 
+    // === NEW: enable MC stat uncertainty ===
+    hDY->Sumw2();
+    hTT->Sumw2();
+    hWZ->Sumw2();
+    hDT->Sumw2();
+
     // ------------------------------------------------------------
     // RDataFrames
     // ------------------------------------------------------------
@@ -131,31 +144,32 @@ void ScaleSmear_RDF() {
     RDataFrame d_wz("Events", fname_wz);
     RDataFrame d_dt("Events", fname_dt);
 
-    // ------------------------------------------------------------
-    // Define Z1 quantities and GoodZ1 selection
     auto defZ = [&](RDataFrame &df) {
         return df
-            .Define("Z1_mass" , pickZ1, {"bestZIdx","ZCand_mass","ZCand_flav"})
-            .Define("Z1_flav" , pickFlav, {"bestZIdx","ZCand_flav"})
-            .Define("GoodZ1", [&](int flav){ return selectChannel(flav, CHANNEL); }, {"Z1_flav"});
+            .Define("Z1_mass", pickZ1,
+                    {"bestZIdx","ZCand_mass","ZCand_flav"})
+            .Define("Z1_flav", pickFlav,
+                    {"bestZIdx","ZCand_flav"})
+            .Define("GoodZ1",
+                    [&](int flav){ return selectChannel(flav, CHANNEL); },
+                    {"Z1_flav"});
     };
 
-    // DY
     auto D_dy = defZ(d_dy)
         .Filter("GoodZ1")
-        .Define("w", [=](float w){ return w*1000.*lumi/cnt_dy; }, {"overallEventWeight"});
+        .Define("w", [=](float w){ return w*1000.*lumi/cnt_dy; },
+                {"overallEventWeight"});
 
-    // TT
     auto D_tt = defZ(d_tt)
         .Filter("GoodZ1")
-        .Define("w", [=](float w){ return w*1000.*lumi/cnt_tt; }, {"overallEventWeight"});
+        .Define("w", [=](float w){ return w*1000.*lumi/cnt_tt; },
+                {"overallEventWeight"});
 
-    // WZ
     auto D_wz = defZ(d_wz)
         .Filter("GoodZ1")
-        .Define("w", [=](float w){ return w*1000.*lumi/cnt_wz; }, {"overallEventWeight"});
+        .Define("w", [=](float w){ return w*1000.*lumi/cnt_wz; },
+                {"overallEventWeight"});
 
-    // Data
     auto D_dt = defZ(d_dt).Filter("GoodZ1");
 
     // ------------------------------------------------------------
@@ -171,9 +185,32 @@ void ScaleSmear_RDF() {
     hMC->Add(hTT);
     hMC->Add(hWZ);
 
-    // Normalize MC to Data
-    double scale = hDT->Integral() / hMC->Integral();
-    hMC->Scale(scale);
+    // Normalize MC to data
+    double norm = hDT->Integral() / hMC->Integral();
+    hMC->Scale(norm);
+
+    // =====================================================================
+    // RATIO + TOTAL UNCERTAINTY BAND
+    // =====================================================================
+    TH1D *hRatio = (TH1D*)hMC->Clone("hRatio");
+    hRatio->Divide(hDT);
+
+    TH1D *hRatioErr = (TH1D*)hRatio->Clone("hRatioErr");
+
+    for (int i = 1; i <= hRatio->GetNbinsX(); i++) {
+        double R     = hRatio->GetBinContent(i);
+        double estat = hRatio->GetBinError(i);
+
+        double escale = scale_value * R;
+        double eres   = res_value   * R;
+
+        double etot = std::sqrt(estat*estat +
+                                escale*escale +
+                                eres*eres);
+
+        hRatioErr->SetBinContent(i, 1.0);
+        hRatioErr->SetBinError(i, etot);
+    }
 
     // =====================================================================
     // PLOTS
@@ -181,7 +218,9 @@ void ScaleSmear_RDF() {
     TCanvas *c = new TCanvas("c","",1400,1000);
     c->Divide(1,2);
 
+    // --------------------------
     // Top pad
+    // --------------------------
     c->cd(1);
     gPad->SetPad(0,0.3,1,1);
     gPad->SetBottomMargin(0.05);
@@ -202,7 +241,7 @@ void ScaleSmear_RDF() {
     hMC->SetStats(0); 
     hMC->SetLineColor(myBlue);
     hMC->GetXaxis()->SetLabelSize(0); 
-
+   
     //hMC->SetLineColor(kBlue);      // blue MC line
     hMC->SetLineWidth(2);
     hMC->SetFillStyle(0);          // no fill
@@ -226,42 +265,46 @@ void ScaleSmear_RDF() {
     CMS_lumi cmsLabel;
     cmsLabel.set_lumi((TPad*)gPad, lumi);
 
+    // --------------------------
     // Ratio pad
+    // --------------------------
     c->cd(2);
     gPad->SetPad(0,0.0,1,0.3);
     gPad->SetTopMargin(0.05);
     gPad->SetBottomMargin(0.25);
     gPad->SetLeftMargin(0.15);
+    
+    hRatioErr->SetMinimum(0.5);
+    hRatioErr->SetMaximum(1.5);
+    hRatioErr->SetFillColorAlpha(kBlue, 0.5);
+    hRatioErr->SetLineColor(kBlue);
+    hRatioErr->SetStats(0);
 
-    TH1D *hRatio = (TH1D*)hMC->Clone("hRatio");
-    hRatio->Divide(hDT);
-    hRatio->SetTitle("");
-    hRatio->SetStats(0);
-    hRatio->SetMinimum(0.5);
-    hRatio->SetMaximum(1.5);
-    // Turn off automatic labels
-    //hRatio->GetYaxis()->SetNdivisions(0);
 
-    // Manually set only two labels
-    //hRatio->GetYaxis()->SetBinLabel(1, "0.5");
-    //hRatio->GetYaxis()->SetBinLabel(2, "1.5");
-    hRatio->GetYaxis()->SetTitle("MC/Data");
-    hRatio->GetYaxis()->CenterTitle(true);
-    hRatio->GetYaxis()->SetTitleOffset(0.2);
-    hRatio->GetYaxis()->SetTitleSize(0.15);
-    hRatio->GetYaxis()->SetLabelSize(0.08);
-    //hRatio->GetYaxis()->SetLabelOffset(0.1);
+    hRatioErr->GetXaxis()->SetTitle("m_{ll} [GeV]");
+    hRatioErr->GetXaxis()->SetTitleSize(0.12);
+    hRatioErr->GetXaxis()->SetLabelSize(0.10);
 
-    hRatio->GetXaxis()->SetTitle("m_{ll} [GeV]");
-    hRatio->GetXaxis()->SetTitleSize(0.12);
-    hRatio->GetXaxis()->SetLabelSize(0.10);
-    hRatio->SetMarkerStyle(8);       // black points
-    hRatio->SetMarkerSize(1.0);
-    hRatio->SetLineColor(kBlack);
-    hRatio->Draw("P");
+    hRatioErr->GetYaxis()->SetTitle("MC/Data");
+    hRatioErr->GetYaxis()->CenterTitle(true);
+    hRatioErr->GetYaxis()->SetTitleOffset(0.2);
+    hRatioErr->GetYaxis()->SetTitleSize(0.15);
+    hRatioErr->GetYaxis()->SetLabelSize(0.08);
 
-    c->SaveAs(Form("plot_%s_%s_RDF.png", CHANNEL.c_str(), YEAR.c_str()));
-    c->SaveAs(Form("plot_%s_%s_RDF.pdf", CHANNEL.c_str(), YEAR.c_str()));
+    hRatioErr->Draw("E2");
 
-    std::cout << "\nSaved plot: plot_" << CHANNEL << "_" << YEAR << "_RDF\n";
+    hRatio->SetMarkerStyle(8);
+    hRatio->Draw("P SAME");
+
+    // --------------------------
+    // Save
+    // --------------------------
+    c->SaveAs(Form("plot_%s_%s_RDF.png",
+                   CHANNEL.c_str(), YEAR.c_str()));
+    c->SaveAs(Form("plot_%s_%s_RDF.pdf",
+                   CHANNEL.c_str(), YEAR.c_str()));
+
+    std::cout << "\nSaved plot: plot_" << CHANNEL
+              << "_" << YEAR << "_RDF\n";
 }
+
