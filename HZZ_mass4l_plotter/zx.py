@@ -6,7 +6,7 @@ import ROOT
 
 # Configuration
 years = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
-eos_path_template = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/FAKERATES/{}/'
+eos_path_template = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/FAKERATES/{}/'
 branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z1Mass', 'Z2Mass']
 
 
@@ -87,35 +87,35 @@ def comb(year):
             1.093, 
             1.057, 
             1.254,
-            ])  # 2022preEE
+            ])  # 2022preEE OK
     if year == "2022EE":
         return np.array([
             1.067, # 4e
             1.015, # 4mu
             1.049, # 2e2mu
             0.905, # 2mu2e
-            ])  # 2022EE
+            ])  # 2022EE OK
     if year == "2023preBPix":
         return np.array([
             1.116, 
             1.036, 
             0.989, 
             1.141,
-            ])  # 2023preBPix
+            ])  # 2023preBPix OK
     if year == "2023postBPix":
         return np.array([
             0.795, # 4e
             1.025, # 4mu
             1.074, # 2e2mu
             1.078, # 2mu2e
-            ])  # 2023postBPix
+            ])  # 2023postBPix OK
     if year == "2024":
         return np.array([
-            0.782, # 4e
-            0.838, # 4mu
-            0.845, # 2e2mu
-            0.747, # 2mu2e
-            ])  # 2024
+            0.787, # 4e
+            0.960, # 4mu
+            0.958, # 2e2mu
+            0.749, # 2mu2e
+            ])  # 2024 OK
 
 
 def ratio(year):
@@ -140,21 +140,21 @@ def ratio(year):
             1.024, 
             1.102, 
             1.024,
-            ])  # 2023preBPix
+            ])  # 2023preBPix OK
     if year == "2023postBPix":
         return np.array([
             1.006,   # 4e
             1.040,  # 4mu
             1.078,   # 2e2mu
             1.025,  # 2mu2e
-            ])  # 2023postBPix
+            ])  # 2023postBPix OK
     if year == "2024":
         return np.array([
-            1.001,   # 4e
-            1.047,  # 4mu
-            1.068,   # 2e2mu
-            1.025,  # 2mu2e
-            ])  # 2024
+            0.997,   # 4e
+            1.028,  # 4mu
+            1.051,   # 2e2mu
+            1.024,  # 2mu2e
+            ])  # 2024 OK
 
 def ZXYield(df, year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE):
     print("ZXYield")
@@ -190,49 +190,34 @@ def ZXYield(df, year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE):
 
     return Yield
 
+def doZX(year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE, data_files):
+    dir_name = "CRZLLTree"  # TDirectoryFile
+    tree_name = "candTree"   # Actual TTree inside the directory
 
-def doZX(year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE):
-    dir_name = "CRZLLTree" #"CRZLLTree"       # TDirectoryFile
-    tree_name = "candTree"       # Actual TTree inside the directory
+    dfs = []  # List to hold DataFrames from each file
 
-    # Map year strings to file paths
-    data_files = {
-        "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/170625/Data/2022/Data_eraCD_preEE_SKIMMED_FR_ok.root",
-        "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/170625/Data/2022/Data_eraEFG_postEE_FR_ok.root",
-        "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/170625/Data/2023/Data_eraC_preBPix_FR_ok.root",
-        "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/170625/Data/2023/Data_eraD_postBPix_FR_ok.root",
-        "2024": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_Data/ZZ4lAnalysis_FR.root",
-    }
+    for data in data_files:
+        print(f"Reading data file: {data}")
+        with uproot.open(data) as file:
+            if dir_name not in file:
+                raise KeyError(f"Directory '{dir_name}' not found in file {data}.")
+            subdir = file[dir_name]
+            if tree_name not in subdir:
+                raise KeyError(f"TTree '{tree_name}' not found in '{dir_name}' in file {data}.")
+            ttreeZX = subdir[tree_name]
+            dfZX = ttreeZX.arrays(branches_ZX, library="pd")
+            dfs.append(dfZX)
 
-    if year not in data_files:
-        raise ValueError(f"Year '{year}' is not recognized. Available options: {list(data_files.keys())}")
+    # Concatenate all files into one DataFrame
+    dfZX = pd.concat(dfs, ignore_index=True)
 
-    data = data_files[year]
+    # Keep only same-sign events
+    dfZX = dfZX[dfZX.Z2Flav > 0]
 
-    print(f"Using data file: {data}")
-
-    print("Reading data:", data)
-
-    with uproot.open(data) as file:
-        # Navigate to directory first
-        if dir_name not in file:
-            raise KeyError(f"Directory '{dir_name}' not found in file.")
-
-        subdir = file[dir_name]
-
-        # Now access the TTree inside the subdirectory
-        if tree_name not in subdir:
-            raise KeyError(f"TTree '{tree_name}' not found inside '{dir_name}'.")
-
-        ttreeZX = subdir[tree_name]
-
-        # Load data as DataFrame
-        dfZX = ttreeZX.arrays(branches_ZX, library="pd")
-        print("dfZX", dfZX)
-
-    dfZX = dfZX[dfZX.Z2Flav > 0]  # Keep only same-sign events
-    #print("dfZX", dfZX)
+    # Determine final state
     dfZX = findFSZX(dfZX)
+
+    # Compute weights
     dfZX['weight1'] = ZXYield(dfZX, year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE)
 
     return dfZX
@@ -248,17 +233,76 @@ def save_to_root(df, output_path, tree_name="candTree"):
 # ------------------------- Main -------------------------
 def zx():
     d_ZX = {}
+
     for year in years:
         g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE = openFR(year)
-        d_ZX[year] = doZX(year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE)
 
-        # Define output path
-        output_file = f"ZX_results_{year}.root"
+        # Define data files per year
+        if year != "2024":
+            data_files_dict = {
+                "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_Data/Data_eraCD_preEE_SKIMMED.root",
+                "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_Data/Data_eraEFG_postEE_SKIMMED.root",
+                "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023_Data/Data_eraC_preBPix_SKIMMED.root",
+                "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023_Data/Data_eraD_postBPix_SKIMMED.root",
+            }
+            data_files = [data_files_dict[year]] 
+        else:
+            # Replace this with your list of 2024 files
+            data_files = [
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Cv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Dv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Ev1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Fv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Gv2/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Hv2/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Iv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Iv2/ZZ4lAnalysis_SKIMMED.root",
+
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Cv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Dv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Ev1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Fv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Gv2/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Hv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Iv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Iv2/ZZ4lAnalysis_SKIMMED.root",
+
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Cv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Dv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Ev1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Fv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Gv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Hv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Iv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Iv2/ZZ4lAnalysis_SKIMMED.root",
+
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Cv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Dv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Ev1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Fv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Gv2/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Hv2/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Iv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Iv2/ZZ4lAnalysis_SKIMMED.root",
+
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Cv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Dv1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Ev1/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Fv2/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Gv3/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Hv2/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Iv2/ZZ4lAnalysis_SKIMMED.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Iv2v2/ZZ4lAnalysis_SKIMMED.root"
+            ]
+
+        d_ZX[year] = doZX(year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE, data_files)
+
         # Save the DataFrame with weights to ROOT file
+        output_file = f"ZX_results_{year}.root"
         save_to_root(d_ZX[year], output_file)
 
         print(year, 'done')
-        print("d_ZX", d_ZX[year])
+
     return d_ZX
 
 

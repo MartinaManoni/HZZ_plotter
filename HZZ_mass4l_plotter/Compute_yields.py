@@ -8,11 +8,11 @@ ROOT.EnableImplicitMT()
 # Paths and constants
 # -----------------------------
 MC_PATHS = {
-    "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2022_MC/",
-    "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2022EE_MC/",
-    "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2023preBPix_MC/",
-    "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2023postBPix_MC/",
-    "2024": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/2024_MC/",
+    "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_MC/",
+    "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022EE_MC/",
+    "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023preBPix_MC/",
+    "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023postBPix_MC/",
+    "2024": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_MC/",
 }
 
 ZX_PATHS = {
@@ -21,6 +21,59 @@ ZX_PATHS = {
     "2023preBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2023preBPix.root",
     "2023postBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2023postBPix.root",
     "2024": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2024.root",
+}
+
+DATA_PATHS = {
+    "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_Data/Data_eraCD_preEE.root",
+    "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_Data/Data_eraEFG_postEE.root",
+    "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023_Data/Data_eraC_preBPix.root",
+    "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023_Data/Data_eraD_postBPix.root",
+    "2024": [
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Cv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Dv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Ev1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Fv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Gv2/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Hv2/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Iv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma02024Iv2/ZZ4lAnalysis.root",
+
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Cv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Dv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Ev1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Fv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Gv2/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Hv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Iv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/EGamma12024Iv2/ZZ4lAnalysis.root",
+
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Cv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Dv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Ev1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Fv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Gv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Hv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Iv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon02024Iv2/ZZ4lAnalysis.root",
+
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Cv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Dv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Ev1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Fv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Gv2/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Hv2/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Iv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/Muon12024Iv2/ZZ4lAnalysis.root",
+
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Cv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Dv1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Ev1/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Fv2/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Gv3/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Hv2/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Iv2/ZZ4lAnalysis.root",
+            "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_Data/MuonEG2024Iv2v2/ZZ4lAnalysis.root"
+            ]
 }
 
 LUMI = {
@@ -64,7 +117,7 @@ def get_genEventSumw(f):
         genEventSumw += runs.genEventSumw
     return genEventSumw
 
-def compute_yields(mc_files, year, zx_file=None, m4l_min=70, m4l_max=3000):
+def compute_yields(mc_files, year, zx_file=None, m4l_min=105, m4l_max=160):
     yields = {}
     lumi = LUMI[year]
 
@@ -115,6 +168,43 @@ def compute_yields(mc_files, year, zx_file=None, m4l_min=70, m4l_max=3000):
 
     return yields
 
+
+def compute_data_yields(data_path, m4l_min=105, m4l_max=160):
+
+    # Allow single file or list of files
+    if isinstance(data_path, list):
+        df = ROOT.RDataFrame("Events", data_path)
+    else:
+        if not os.path.exists(data_path):
+            return {}
+        df = ROOT.RDataFrame("Events", data_path)
+
+    df = df.Filter("bestCandIdx != -1") \
+           .Filter("HLT_passZZ4l") \
+           .Define("m4l", "ZZCand_mass[bestCandIdx]") \
+           .Define("Z1flav", "ZZCand_Z1flav[bestCandIdx]") \
+           .Define("Z2flav", "ZZCand_Z2flav[bestCandIdx]")
+
+    df = df.Filter(f"m4l > {m4l_min} && m4l < {m4l_max}")
+
+    yields = {}
+
+    for fs in FINAL_STATES:
+        if fs == "4l":
+            yields[fs] = df.Count().GetValue()
+        else:
+            flavs = Z_FLAVORS[fs]
+            if isinstance(flavs[0], tuple):
+                selection = " || ".join(
+                    [f"(Z1flav == {f[0]} && Z2flav == {f[1]})" for f in flavs]
+                )
+            else:
+                selection = f"(Z1flav == {flavs[0]} && Z2flav == {flavs[1]})"
+
+            yields[fs] = df.Filter(selection).Count().GetValue()
+
+    return yields
+
 # -----------------------------
 # Run per year and aggregate
 # -----------------------------
@@ -143,6 +233,10 @@ for year in YEARS:
             mc_files[s] = filename
 
     yields = compute_yields(mc_files, year, zx_file)
+    # Compute data
+    data_yields = compute_data_yields(DATA_PATHS[year])
+    yields["Data"] = data_yields
+
     ALL_YIELDS[year] = yields
 
     # Print per year per final state
@@ -154,40 +248,47 @@ for year in YEARS:
 # Aggregated results
 # -----------------------------
 def aggregate_years(year_list):
-    agg = {fs:{"qqZZ":0,"ggZZ":0,"ZX":0,"Signal":0,"Bkg":0} for fs in FINAL_STATES}
+    agg = {fs:{"qqZZ":0,"ggZZ":0,"ZX":0,"Signal":0,"Bkg":0,"Data":0, "Total":0} for fs in FINAL_STATES}
     for year in year_list:
         ydict = ALL_YIELDS.get(year, {})
         for fs in FINAL_STATES:
             qqZZ_total = sum(ydict.get(s, {}).get(fs,0) for s in QQZZ_SAMPLES)
             ggZZ_total = sum(ydict.get(s, {}).get(fs,0) for s in GGZZ_SAMPLES)
             signal_total = sum(ydict.get(s, {}).get(fs,0) for s in SIGNAL_SAMPLES)
+            data_total = ydict.get("Data", {}).get(fs,0)
             zx_total = ydict.get("ZX", {}).get(fs,0)
             bkg_total = qqZZ_total + ggZZ_total + zx_total
+            total = signal_total + bkg_total
             agg[fs]["qqZZ"] += qqZZ_total
             agg[fs]["ggZZ"] += ggZZ_total
             agg[fs]["ZX"] += zx_total
             agg[fs]["Signal"] += signal_total
             agg[fs]["Bkg"] += bkg_total
+            agg[fs]["Data"] += data_total
+            agg[fs]["Total"] += total
     return agg
 
 # Print custom aggregates
 CUSTOM_AGG = {
     "2022+2022EE": ["2022","2022EE"],
-    "2022+2022EE+2023preBPix+2023postBPix": ["2022","2022EE","2023preBPix","2023postBPix"]
+    "2022+2022EE+2023preBPix+2023postBPix": ["2022","2022EE","2023preBPix","2023postBPix"],
+    "2022+2022EE+2023preBPix+2023postBPix+2024": ["2022","2022EE","2023preBPix","2023postBPix","2024"]
 }
 
 for label, years_list in CUSTOM_AGG.items():
     agg = aggregate_years(years_list)
     print(f"\n===== Aggregated Yields: {label} =====")
-    print("FS      qqZZ    ggZZ     ZX       Bkg      Signal")
+    print("FS      qqZZ    ggZZ     ZX       Bkg      Signal  Data   Total ")
     for fs in FINAL_STATES:
-        print(f"{fs:6s} " + " ".join(f"{agg[fs][cat]:8.2f}" for cat in ["qqZZ","ggZZ","ZX","Bkg","Signal"]))
+        print(f"{fs:6s} " + " ".join(f"{agg[fs][cat]:8.2f}" for cat in ["qqZZ","ggZZ","ZX","Bkg","Signal","Data","Total"]))
 
 # -----------------------------
 # Total over all years
 # -----------------------------
+print(f"\n===== Total over all years: {label} =====")
 agg_total = aggregate_years(YEARS)
-print(f"\n===== Total over all years =====")
-print("FS      qqZZ    ggZZ     ZX       Bkg      Signal")
+print("FS      qqZZ    ggZZ     ZX       Bkg      Signal    Data   Total")
 for fs in FINAL_STATES:
-    print(f"{fs:6s} " + " ".join(f"{agg_total[fs][cat]:8.2f}" for cat in ["qqZZ","ggZZ","ZX","Bkg","Signal"]))
+    print(f"{fs:6s} " + " ".join(f"{agg_total[fs][cat]:8.2f}" 
+    for cat in ["qqZZ","ggZZ","ZX","Bkg","Signal","Data","Total" ]
+    ))

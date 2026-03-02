@@ -58,7 +58,7 @@ inFilenameZX2024 = "H4l_ZX_2024_RDF.root"
 
 lumi_24 = 108.82
 
-outFilename = "Plots_fullRun3_RDF.root"
+outFilename = "Plots_fullRun3_RDF_FINAL.root"
 
 ## output directory
 today = date.today()
@@ -68,7 +68,7 @@ os.makedirs(out_dir, exist_ok=True) #check if output dir exist
 
 
 # plots options
-blindPlots = True
+blindPlots = False
 blindHLow = 105.
 blindHHi  = 140.
 blindHM   = 500.
@@ -97,10 +97,25 @@ ROOT.gStyle.SetTitleOffset(1.25, "Y")
 ROOT.gStyle.SetLabelOffset(0.008, "XYZ")
 ROOT.gStyle.SetLabelSize(0.04, "XYZ")
 
-canvasSizeX=910
-canvasSizeY=700
+canvasSizeX=1200
+canvasSizeY=900
 
 #####################
+
+def TGraphToTH1MatchingBins(graph, ref_hist, name="hdata_hist"):
+    """
+    Convert a TGraphAsymmErrors to TH1D using the same binning as ref_hist.
+    """
+    nbins = ref_hist.GetNbinsX()
+    h = ROOT.TH1D(name, "", nbins, ref_hist.GetXaxis().GetXmin(), ref_hist.GetXaxis().GetXmax())
+    x = graph.GetX()
+    y = graph.GetY()
+    for i in range(graph.GetN()):
+        bin_idx = h.FindBin(x[i])
+        h.SetBinContent(bin_idx, y[i])
+        h.SetBinError(bin_idx, max(graph.GetErrorYlow(i), graph.GetErrorYhigh(i)))
+    return h
+
 def printCanvases(type="png", path=".") :
     canvases = ROOT.gROOT.GetListOfCanvases()
     for c in canvases :
@@ -419,14 +434,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     
     #------------------Stack----------#
     if variable == "ZZmass_":
-        if version=="4GeV_" :
-            hs = ROOT.THStack("Stack_4GeV", "; m_{#it{4l}} (GeV) ; Events / 4 GeV" )
-        elif version=="5GeV_" :
+        if version=="5GeV_" :
             hs = ROOT.THStack("Stack_5GeV", "; m_{#it{4l}} (GeV) ; Events / 5 GeV" )
-        elif version=="10GeV_" :
-            hs = ROOT.THStack("Stack_10GeV", "; m_{#it{4l}} (GeV) ; Events / 10 GeV" )
-        else:
+        elif version=="2GeV_" :
             hs = ROOT.THStack("Stack_2GeV", "; m_{#it{4l}} (GeV) ; Events / 2 GeV" )
+        else:
+            hs = ROOT.THStack("Stack_1GeV", "; m_{#it{4l}} (GeV) ; Events / 1 GeV" )
     else:
         hs = ROOT.THStack(f"Stack_{variable}", f"; {variable} (GeV); Events")
 
@@ -565,7 +578,7 @@ if __name__ == "__main__" :
         print(f"\nProcessing final state: {fs}")
 
         for variable in variables:
-            versions = ["2GeV_", "4GeV_", "5GeV_", "10GeV_"] if variable == "ZZMass_" else [""]
+            versions = ["2GeV_", "5GeV_", "1GeV_"] if variable == "ZZMass_" else [""]
 
             for version in versions:
                 print(f"  Variable: {variable}, version: {version if version else 'no version'}")
@@ -588,11 +601,23 @@ if __name__ == "__main__" :
 
                 # Create canvas
                 canvas_name = f"{variable}{version}_full_allYears_{fs}".replace("__", "_")
+                
+                # Create canvas
                 Canvas = ROOT.TCanvas(canvas_name, canvas_name, canvasSizeX, canvasSizeY)
                 Canvas.SetTicks()
 
-                print("CIAO")
-                Canvas.GetListOfPrimitives().Print()
+                # Split canvas into main pad (stack) and ratio pad
+                pad1 = ROOT.TPad("pad1", "pad1", 0, 0.3, 1, 1)   # main plot
+                pad2 = ROOT.TPad("pad2", "pad2", 0, 0, 1, 0.3)   # ratio plot
+                pad1.SetBottomMargin(0.02)
+                pad1.SetTopMargin(0.09)
+                pad2.SetTopMargin(0.05)
+                pad2.SetBottomMargin(0.4)
+                pad1.Draw()
+                pad2.Draw()
+
+                # ---------------- Main pad ----------------
+                pad1.cd()
 
                 # Set maximum
                 xmin = ctypes.c_double(0.)
@@ -600,15 +625,11 @@ if __name__ == "__main__" :
                 xmax = ctypes.c_double(0.)
                 ymax = ctypes.c_double(0.)
                 HData_var.ComputeRange(xmin, ymin, xmax, ymax)
-                HStack_var.SetMaximum(math.ceil(max(HStack_var.GetMaximum(), ymax.value)))
-
-                # === Set axis labels on the first histogram in stack ===
-                
+                HStack_var.SetMaximum(math.ceil(1.1*max(HStack_var.GetMaximum(), ymax.value)))
 
                 # Draw stack
                 HStack_var.Draw("HISTO")
-
-                first_histo = h_list_var[0]  # must be non-null
+                first_histo = h_list_var[0]
                 first_histo.GetXaxis().SetRangeUser(70., 500.)
 
                 # Blinding for ZZMass
@@ -617,8 +638,6 @@ if __name__ == "__main__" :
                     bblind.SetFillColor(ROOT.kGray)
                     bblind.SetFillStyle(3002)
                     bblind.Draw("same")
-
-                    # New blinding box: 300–500 GeV
                     bblind2 = ROOT.TBox(300., 0, 400., HStack_var.GetMaximum() - epsilon)
                     bblind2.SetFillColor(ROOT.kGray)
                     bblind2.SetFillStyle(3002)
@@ -630,13 +649,17 @@ if __name__ == "__main__" :
                 # X-axis labels tweaks for ZZMass
                 if variable == "ZZMass_":
                     HStack_var.GetXaxis().SetLabelSize(0)
-                    for label in xlabels:
-                        label.Draw()
+                if variable == "Z1Mass_":
+                    HStack_var.GetXaxis().SetLabelSize(0)
+                if variable == "Z2Mass_":
+                    HStack_var.GetXaxis().SetLabelSize(0)
+                    #for label in xlabels:
+                        #label.Draw()
 
                 ROOT.gPad.RedrawAxis()
 
-                # === Legend ===
-                legend = ROOT.TLegend(0.72, 0.70, 0.94, 0.92)
+                # Legend
+                legend = ROOT.TLegend(0.72, 0.60, 0.94, 0.82)
                 legend.AddEntry(HData_var, "Data", "p")
                 legend.AddEntry(h_list_var[4], "H(125)", "f")
                 legend.AddEntry(h_list_var[3], "q#bar{q}#rightarrow ZZ", "f")
@@ -646,10 +669,10 @@ if __name__ == "__main__" :
                 legend.SetFillColor(ROOT.kWhite)
                 legend.SetLineColor(ROOT.kWhite)
                 legend.SetTextFont(43)
-                legend.SetTextSize(20)
+                legend.SetTextSize(25)
                 legend.Draw()
 
-                # === CMS / Lumi ===
+                # CMS / Lumi
                 CMS_lumi.writeExtraText = True
                 CMS_lumi.extraText      = "Preliminary"
                 CMS_lumi.lumi_sqrtS     = r"171 fb^{-1} (13.6 TeV)"
@@ -657,9 +680,66 @@ if __name__ == "__main__" :
                 CMS_lumi.lumiTextSize   = 0.7
                 CMS_lumi.extraOverCmsTextSize = 0.80
                 CMS_lumi.relPosX = 0.12
-                CMS_lumi.CMS_lumi(Canvas, 0, 0)
+                CMS_lumi.CMS_lumi(pad1, 0, 0)
 
-                # Save
+                # ---------------- Ratio pad ----------------
+                pad2.cd()
+
+                # Sum of MC
+                hsum = h_list_var[0].Clone("hsum")
+                for h in h_list_var[1:]:
+                    hsum.Add(h, 1.)
+
+                # Convert data TGraph to TH1 with same binning as hsum
+                hdata_hist = TGraphToTH1MatchingBins(HData_var, hsum, "hdata_hist")
+
+                # Create ratio
+                ratio = hdata_hist.Clone("ratio")
+                ratio.Divide(hsum)  # now safe
+
+                # Draw ratio
+                ratio.SetMarkerStyle(20)
+                ratio.SetTitle("")
+                ratio.GetYaxis().SetTitle("Data / MC")
+                ratio.GetYaxis().SetNdivisions(505)
+                ratio.GetYaxis().SetTitleSize(0.15)
+                ratio.GetYaxis().SetLabelSize(0.12)
+                ratio.GetYaxis().SetTitleOffset(0.35)
+                ratio.GetXaxis().SetTitleSize(0.15)
+                ratio.GetXaxis().SetLabelSize(0.12)
+                ratio.GetXaxis().SetTitle(get_m4l_label(fs))
+                ratio.SetMinimum(0.5)
+                ratio.SetMaximum(1.5)
+                ratio.SetStats(False) 
+                ratio.Draw("PE1")
+
+                # Draw horizontal black line at y=1
+                line = ROOT.TLine(ratio.GetXaxis().GetXmin(), 1., ratio.GetXaxis().GetXmax(), 1.)
+                line.SetLineColor(ROOT.kBlack)
+                line.SetLineWidth(2)
+                line.SetLineStyle(2)  # dashed line
+                line.Draw("same")
+
+                # RMS display
+                # ---------------- Overall RMS ----------------
+                # Collect y-values (Data/MC) from the ratio histogram
+                y_vals = [ratio.GetBinContent(i) for i in range(1, ratio.GetNbinsX()+1) if ratio.GetBinContent(i) > 0]
+
+                if len(y_vals) > 0:
+                    mean_y = sum(y_vals) / len(y_vals)
+                    rms_value = math.sqrt(sum((y - mean_y)**2 for y in y_vals) / len(y_vals))
+                else:
+                    rms_value = 0.
+
+                # Display RMS in a box
+                rms_box = ROOT.TPaveText(0.65, 0.75, 0.90, 0.90, "NDC")
+                rms_box.SetFillColor(ROOT.kWhite)
+                rms_box.SetTextFont(42)
+                rms_box.SetTextSize(0.08)
+                rms_box.AddText(f"RMS (Data/MC) = {rms_value:.3f}")
+                rms_box.Draw()
+
+                # ---------------- Save ----------------
                 Canvas.Update()
                 Canvas.Draw()
                 Canvas.Write()
