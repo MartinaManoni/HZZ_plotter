@@ -7,7 +7,34 @@ import ROOT
 # Configuration
 years = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
 eos_path_template = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/FAKERATES/{}/'
-branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z1Mass', 'Z2Mass']
+branches_ZX = [
+    "ZZMass",
+    "Z1Flav",
+    "Z2Flav",
+    "LepLepId",
+    "LepEta",
+    "LepPt",
+    "Z1Mass",
+    "Z2Mass",
+    "costheta1",
+    "costheta2",
+    "costhetastar",
+    "Phi",
+    "Phi1",
+    "ZZPt",
+    "ZZy",
+    "Nj",
+    "mjj",
+    "absdetajj",
+    "dphijj",
+    "pTj1",
+    "pTj2",
+    "pTHj",
+    "pTHjj",
+    "mHj",
+    "TBjMax",
+    "TCjMax",
+]
 
 
 def FindFinalState(z1_flav, z2_flav):
@@ -298,7 +325,7 @@ def zx():
         d_ZX[year] = doZX(year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE, data_files)
 
         # Save the DataFrame with weights to ROOT file
-        output_file = f"ZX_results_{year}.root"
+        output_file = f"ZX_results_{year}_obs.root"
         save_to_root(d_ZX[year], output_file)
 
         print(year, 'done')

@@ -96,6 +96,32 @@ OBSERVABLES = {
         "bins": [-1.0,-0.75,-0.50,-0.25,0.0,0.25,0.50,0.75,1.0]
     },
 
+    "costhetaZ2": {
+        "var": "costheta2",
+        "title": "cos(#theta_{Z2});cos(#theta_{Z2});Events",
+        "bins": [-1.0,-0.75,-0.50,-0.25,0.0,0.25,0.50,0.75,1.0]
+    },
+
+    "costhetastar": {
+        "var": "costhetastar",
+        "title": "cos(#theta*);cos(#theta*);Events",
+        "bins": [-1.0,-0.75,-0.50,-0.25,0.0,0.25,0.50,0.75,1.0]
+    },
+
+    "phi": {
+        "var": "Phi",
+        "title": "#phi;#phi;Events",
+        "bins": [-3.14159265359,-2.35619449019,-1.57079632679,-0.785398163397,0.0,
+                 0.785398163397,1.57079632679,2.35619449019,3.14159265359]
+    },
+
+    "phi1": {
+        "var": "Phi1",
+        "title": "#phi_{1};#phi_{1};Events",
+        "bins": [-3.14159265359,-2.35619449019,-1.57079632679,-0.785398163397,0.0,
+                 0.785398163397,1.57079632679,2.35619449019,3.14159265359]
+    },
+
     "pT4l": {
         "var": "ZZPt",
         "title": "p_{T}^{4l};p_{T}^{4l} [GeV];Events",
@@ -106,7 +132,79 @@ OBSERVABLES = {
         "var": "ZZy",
         "title": "|y_{4l}|;|y_{4l}|;Events",
         "bins": [0,0.12,0.24,0.36,0.5,0.6,0.75,0.9,1.1,1.3,2.5]
-    }
+    },
+
+    "Nj": {
+        "var": "Nj",
+        "title": "N_{jets};N_{jets};Events",
+        "bins": [0,1,2,3,4,20]
+    },
+
+    "dphijj": {
+        "var": "dphijj",
+        "title": "#Delta#phi_{jj};#Delta#phi_{jj};Events",
+        "bins": [-3.14159265359,-1.57079632679,0,1.57079632679,3.14159265359]
+    },
+
+    "massZ1": {
+        "var": "Z1Mass",
+        "title": "m_{Z1};m_{Z1} [GeV];Events",
+        "bins": [40,65,75,85,92,120]
+    },
+
+    "massZ2": {
+        "var": "Z2Mass",
+        "title": "m_{Z2};m_{Z2} [GeV];Events",
+        "bins": [12,22,26,28,32,34,40,50,65]
+    },
+
+    "pTj1": {
+        "var": "pTj1",
+        "title": "p_{T}^{j1};p_{T}^{j1} [GeV];Events",
+        "bins": [0,30,55,95,200,10000]
+    },
+
+    "pTj2": {
+        "var": "pTj2",
+        "title": "p_{T}^{j2};p_{T}^{j2} [GeV];Events",
+        "bins": [0,30,45,62,200]
+    },
+
+    "mjj": {
+        "var": "mjj",
+        "title": "m_{jj};m_{jj} [GeV];Events",
+        "bins": [0,92,224,500]
+    },
+
+    "absdetajj": {
+        "var": "absdetajj",
+        "title": "|#Delta#eta_{jj}|;|#Delta#eta_{jj}|;Events",
+        "bins": [0,1.1,2.9,4.4,10]
+    },
+
+    "pTHj": {
+        "var": "pTHj",
+        "title": "p_{T}^{Hj};p_{T}^{Hj} [GeV];Events",
+        "bins": [0,12,28,40,85,200]
+    },
+
+    "mHj": {
+        "var": "mHj",
+        "title": "m_{Hj};m_{Hj} [GeV];Events",
+        "bins": [0,210,275,355,460,645,800]
+    },
+
+    "TCjMax": {
+        "var": "TCjMax",
+        "title": "T_{Cj};T_{Cj} [GeV];Events",
+        "bins": [0.0,4,8,15,20,35,100]
+    },
+
+    "TBjMax": {
+        "var": "TBjMax",
+        "title": "T_{Bj};T_{Bj} [GeV];Events",
+        "bins": [0,4,8,16,25,45,100]
+    },
 
 }
 
@@ -183,9 +281,12 @@ def run_sample(sample_name, filepath, output_file, period, isMC=True):
 
     histos = define_histograms(df_full, df_window, sample_name, isMC)
 
+    # write histograms (divide by bin width)
     output_file.cd()
     for h in histos.values():
-        h.GetValue().Write()
+        hist = h.GetValue()
+        hist.Scale(1.0, "width")
+        hist.Write()
 
 # =========================
 # RUN MC
@@ -226,7 +327,9 @@ def run_data(period):
     fout = ROOT.TFile.Open(f"H4l_Data_{period}_DIFF.root", "RECREATE")
 
     for h in histos.values():
-        h.GetValue().Write()
+        hist = h.GetValue()
+        hist.Scale(1.0, "width")
+        hist.Write()
 
     fout.Close()
 
@@ -243,9 +346,14 @@ def run_zx(period):
 
     # Map columns to OBSERVABLES
     df = df.Define("costhetaZ1", "costheta1") \
-           .Define("pT4l","ZZPt")\
-           .Define("rapidity4l", "ZZy")\
-           .Define("weight", "weight1")  # ZX weight
+       .Define("costhetaZ2", "costheta2") \
+       .Define("phi", "Phi") \
+       .Define("phi1", "Phi1") \
+       .Define("pT4l", "ZZPt") \
+       .Define("rapidity4l", "ZZy") \
+       .Define("massZ1", "Z1Mass") \
+       .Define("massZ2", "Z2Mass") \
+       .Define("weight", "weight1")   # ZX weight
 
     df_SR = df.Filter("ZZMass > 105 && ZZMass < 160")
 
@@ -255,12 +363,14 @@ def run_zx(period):
         bins = array.array('d', cfg["bins"])
         for suffix, rdf in [("_FULL", df), ("_105to160", df_SR)]:
             hname = f"{obs}_ZX{suffix}"
-            # Directly create histogram with correct binning and weights
+
             h = rdf.Histo1D(
                 ROOT.RDF.TH1DModel(hname, hname, len(bins)-1, bins),
                 cfg["var"],
                 "weight"
             ).GetValue()
+
+            h.Scale(1.0, "width")  # divide by bin width
             h.Write()
 
     fout.Close()
