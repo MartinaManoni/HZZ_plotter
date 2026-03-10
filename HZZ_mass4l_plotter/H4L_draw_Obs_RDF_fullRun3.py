@@ -22,6 +22,82 @@ ROOT.gStyle.SetTitleOffset(1.4, "Y")
 canvasSizeX = 900
 canvasSizeY = 700
 
+
+OBSERVABLES = {
+
+    "costhetaZ1": {
+        "title": "cos(#theta_{Z1});cos(#theta_{Z1});Events/bin width"
+    },
+
+    "costhetaZ2": {
+        "title": "cos(#theta_{Z2});cos(#theta_{Z2});Events/bin width"
+    },
+
+    "costhetastar": {
+        "title": "cos(#theta*);cos(#theta*);Events/bin width"
+    },
+
+    "phi": {
+        "title": "#phi;#phi;Events/bin width"
+    },
+
+    "phi1": {
+        "title": "#phi_{1};#phi_{1};Events/bin width"
+    },
+
+    "pT4l": {
+        "title": "p_{T}^{4l};p_{T}^{4l} [GeV];Events/bin width"
+    },
+
+    "rapidity4l": {
+        "title": "|y_{4l}|;|y_{4l}|;Events/bin width"
+    },
+
+    "Nj": {
+        "title": "N_{jets};N_{jets};Events/bin width"
+    },
+
+    "dphijj": {
+        "title": "#Delta#phi_{jj};#Delta#phi_{jj};Events/bin width"
+    },
+
+    "massZ1": {
+        "title": "m_{Z1};m_{Z1} [GeV];Events/bin width"
+    },
+
+    "massZ2": {
+        "title": "m_{Z2};m_{Z2} [GeV];Events/bin width"
+    },
+
+    "pTj1": {
+        "title": "p_{T}^{j1};p_{T}^{j1} [GeV];Events/bin width"
+    },
+
+    "pTj2": {
+        "title": "p_{T}^{j2};p_{T}^{j2} [GeV];Events/bin width"
+    },
+
+    "mjj": {
+        "title": "m_{jj};m_{jj} [GeV];Events/bin width"
+    },
+
+    "absdetajj": {
+        "title": "|#Delta#eta_{jj}|;|#Delta#eta_{jj}|;Events/bin width"
+    },
+
+    "pTHj": {
+        "title": "p_{T}^{Hj};p_{T}^{Hj} [GeV];Events/bin width"
+    },
+
+    "TCjMax": {
+        "title": "T_{Cj};T_{Cj} [GeV];Event/bin width"
+    },
+    
+    "TBjMax": {
+        "title": "T_{Bj};T_{Bj} [GeV];Events/bin width"
+    },
+}
+
 # =========================================================
 # COLORS
 # =========================================================
@@ -32,6 +108,14 @@ category_colors = {
     "ggZZ": "#4b78ff",
     "H125": "#ff9999",
 }
+
+FINAL_STATES = [
+    "inclusive",
+    "4e",
+    "4mu",
+    "2e2mu",
+    "2mu2e",
+]
 
 # =========================================================
 # SAMPLE → CATEGORY MAP (MC ONLY)
@@ -61,7 +145,7 @@ sample_map = {
 # =========================================================
 # BUILD MC HISTOGRAMS
 # =========================================================
-def build_mc(files_dict, variable, suffix):
+def build_mc(files_dict, variable, suffix, fs):
 
     summed = {"EW": None, "ggZZ": None, "qqZZ": None, "H125": None}
 
@@ -71,7 +155,12 @@ def build_mc(files_dict, variable, suffix):
 
         for sample, category in sample_map.items():
 
-            hist_name = f"{variable}_{sample}_{suffix}"
+            #hist_name = f"{variable}_{sample}_{suffix}"
+            if fs == "inclusive":
+                hist_name = f"{variable}_{sample}_{suffix}"
+            else:
+                hist_name = f"{variable}_{sample}_{fs}_{suffix}"
+
             hist = rootfile.Get(hist_name)
 
             if not hist:
@@ -96,7 +185,7 @@ def build_mc(files_dict, variable, suffix):
 # =========================================================
 # SUM ZX BACKGROUND
 # =========================================================
-def sum_zx(files_dict, variable, suffix):
+def sum_zx(files_dict, variable, suffix, fs):
 
     hsum = None
 
@@ -104,7 +193,11 @@ def sum_zx(files_dict, variable, suffix):
 
         print(f"[INFO] Adding ZX period: {period}")
 
-        hist_name = f"{variable}_ZX_{suffix}"
+        if fs == "inclusive":
+            hist_name = f"{variable}_ZX_{suffix}"
+        else:
+            hist_name = f"{variable}_ZX_{fs}_{suffix}"
+
         hist = rootfile.Get(hist_name)
 
         if not hist:
@@ -127,7 +220,7 @@ def sum_zx(files_dict, variable, suffix):
 # =========================================================
 # SUM DATA
 # =========================================================
-def sum_data(files_dict, variable, suffix):
+def sum_data(files_dict, variable, suffix, fs):
 
     hsum = None
 
@@ -135,7 +228,10 @@ def sum_data(files_dict, variable, suffix):
 
         print(f"[INFO] Adding DATA period: {period}")
 
-        hist_name = f"{variable}_DATA_{suffix}"
+        if fs == "inclusive":
+            hist_name = f"{variable}_DATA_{suffix}"
+        else:
+            hist_name = f"{variable}_DATA_{fs}_{suffix}"
         hist = rootfile.Get(hist_name)
 
         if not hist:
@@ -159,11 +255,13 @@ def sum_data(files_dict, variable, suffix):
 # =========================================================
 # DRAW PLOT
 # =========================================================
-def draw_plot(mc_hists, hzx, hdata, variable, suffix, outdir):
+def draw_plot(mc_hists, hzx, hdata, variable, suffix, fs, outdir):
+
+    title = OBSERVABLES[variable]["title"]
 
     stack = ROOT.THStack(
         f"stack_{variable}_{suffix}",
-        f";rapidity;Events"
+        title
     )
 
     if hzx:
@@ -225,7 +323,7 @@ def draw_plot(mc_hists, hzx, hdata, variable, suffix, outdir):
     latex.DrawLatex(0.15, 0.92, "CMS Preliminary")
     latex.DrawLatex(0.58, 0.92, f"{suffix}  (13.6 TeV)")
 
-    canvas.SaveAs(f"{outdir}/{variable}_{suffix}.png")
+    canvas.SaveAs(f"{outdir}/{variable}_{fs}_{suffix}.png")
 
     print(f"[INFO] Saved {outdir}/{variable}_{suffix}.png")
 
@@ -235,8 +333,8 @@ def draw_plot(mc_hists, hzx, hdata, variable, suffix, outdir):
 # =========================================================
 if __name__ == "__main__":
 
-    periods = ["2022", "2022EE"]
-    variable = "rapidity4l"
+    periods = ["2024"]
+    #"2022", "2022EE", "2023preBPix","2023postBPix", "2024"
 
     # MC files
     mc_files = {}
@@ -265,19 +363,27 @@ if __name__ == "__main__":
         if os.path.exists(fname):
             data_files[p] = ROOT.TFile.Open(fname)
 
-    outdir = "plots_allPeriods"
+    outdir = "plots_Obs_byfinal_state_2024"
     os.makedirs(outdir, exist_ok=True)
 
-    for suffix in ["FULL", "105to160"]:
+    for variable in OBSERVABLES:
 
-        print("\n==============================")
-        print(f"[INFO] Making plot: {suffix}")
-        print("==============================")
+        print("\n====================================")
+        print(f"[INFO] Observable: {variable}")
+        print("====================================")
 
-        mc_hists = build_mc(mc_files, variable, suffix)
+        for fs in FINAL_STATES:
 
-        hzx = sum_zx(zx_files, variable, suffix)
+            print(f"\n[INFO] Final state: {fs}")
 
-        hdata = sum_data(data_files, variable, suffix)
+            for suffix in ["FULL", "105to160"]:
 
-        draw_plot(mc_hists, hzx, hdata, variable, suffix, outdir)
+                print(f"[INFO] Region: {suffix}")
+
+                mc_hists = build_mc(mc_files, variable, suffix, fs)
+
+                hzx = sum_zx(zx_files, variable, suffix, fs)
+
+                hdata = sum_data(data_files, variable, suffix, fs)
+
+                draw_plot(mc_hists, hzx, hdata, variable, suffix, fs, outdir)

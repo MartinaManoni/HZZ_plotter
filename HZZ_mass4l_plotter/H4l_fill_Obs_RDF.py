@@ -7,21 +7,24 @@ import os
 import array
 
 ROOT.EnableImplicitMT()
+ROOT.gROOT.SetBatch(True)
 
 # =========================
 # PATHS & LUMI
 # =========================
 MC_PATHS = {
-    "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_MC/",
-    "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022EE_MC/",
+    "2022": "/eos/user/m/mmanoni/test_cleaning/2022_MC/",
+    #/eos/user/m/mmanoni/test_cleaning/2022_MC/
+    #/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_MC/
+    "2022EE": "/eos/user/m/mmanoni/test_cleaning/2022EE_MC/",
     "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023preBPix_MC/",
     "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023postBPix_MC/",
     "2024": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_MC/",
 }
 
 DATA_PATHS = {
-    "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_Data/Data_eraCD_preEE_SKIMMED.root",
-    "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_Data/Data_eraEFG_postEE_SKIMMED.root",
+    "2022": "/eos/user/m/mmanoni/test_cleaning/2022_Data/Data_eraCD_preEE_SKIMMED.root",
+    "2022EE": "/eos/user/m/mmanoni/test_cleaning/2022_Data/Data_eraEFG_postEE_SKIMMED.root",
     "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023_Data/Data_eraC_preBPix_SKIMMED.root",
     "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023_Data/Data_eraD_postBPix_SKIMMED.root",
     "2024": [
@@ -86,6 +89,13 @@ LUMI = {
     "2023preBPix": 18.06,
     "2023postBPix": 9.69,
     "2024": 108.82,
+}
+
+FINAL_STATES = {
+    "4e":    "Z1Flav==-121 && Z2Flav==-121",
+    "4mu":   "Z1Flav==-169 && Z2Flav==-169",
+    "2e2mu": "Z1Flav==-121 && Z2Flav==-169",
+    "2mu2e": "Z1Flav==-169 && Z2Flav==-121",
 }
 
 OBSERVABLES = {
@@ -265,7 +275,7 @@ def define_histograms(df_full, df_window, samplename, isMC):
 # =========================
 # RUN SINGLE SAMPLE
 # =========================
-def run_sample(sample_name, filepath, output_file, period, isMC=True):
+def run_sample(sample, filepath, output_file, period, isMC=True):
     df_full = ROOT.RDataFrame("ZZTree/candTree", filepath)
     df_window = df_full.Filter("ZZMass > 105 && ZZMass < 160")
 
@@ -279,10 +289,36 @@ def run_sample(sample_name, filepath, output_file, period, isMC=True):
         df_full = df_full.Define("weight", weight_expr)
         df_window = df_window.Define("weight", weight_expr)
 
-    histos = define_histograms(df_full, df_window, sample_name, isMC)
+    histos = {}
 
-    # write histograms (divide by bin width)
+    # -------------------------
+    # Inclusive histograms
+    # -------------------------
+    histos_inc = define_histograms(
+        df_full,
+        df_window,
+        sample,
+        isMC
+    )
+
+    histos.update(histos_inc)
+
+    for fs, cut in FINAL_STATES.items():
+
+        df_fs_full = df_full.Filter(cut)
+        df_fs_window = df_window.Filter(cut)
+
+        histos_fs = define_histograms(
+            df_fs_full,
+            df_fs_window,
+            f"{sample}_{fs}",
+            isMC
+        )
+
+        histos.update(histos_fs)
+    
     output_file.cd()
+
     for h in histos.values():
         hist = h.GetValue()
         hist.Scale(1.0, "width")
@@ -322,10 +358,40 @@ def run_data(period):
 
     df_window = df_full.Filter("ZZMass > 105 && ZZMass < 160")
 
-    histos = define_histograms(df_full, df_window, "DATA", isMC=False)
+    histos = {}
+
+
+    # -------------------------
+    # Inclusive histograms
+    # -------------------------
+    histos_inc = define_histograms(
+        df_full,
+        df_window,
+        "DATA",
+        isMC=False
+    )
+
+    histos.update(histos_inc)
+
+    # -------------------------
+    # Final state histograms
+    # -------------------------
+
+    for fs, cut in FINAL_STATES.items():
+
+        df_fs_full = df_full.Filter(cut)
+        df_fs_window = df_window.Filter(cut)
+
+        histos_fs = define_histograms(
+            df_fs_full,
+            df_fs_window,
+            f"DATA_{fs}",
+            isMC=False
+        )
+
+        histos.update(histos_fs)
 
     fout = ROOT.TFile.Open(f"H4l_Data_{period}_DIFF.root", "RECREATE")
-
     for h in histos.values():
         hist = h.GetValue()
         hist.Scale(1.0, "width")
@@ -336,6 +402,10 @@ def run_data(period):
 # =========================
 # RUN ZX (special treatment)
 # =========================
+
+# =========================
+# RUN ZX (corrected for final states)
+# =========================
 def run_zx(period):
     path = ZX_PATHS.get(period)
     if not path or not os.path.exists(path):
@@ -344,17 +414,20 @@ def run_zx(period):
 
     df = ROOT.RDataFrame("candTree", path)
 
-    # Map columns to OBSERVABLES
+    # Map columns to standard names for observables
     df = df.Define("costhetaZ1", "costheta1") \
-       .Define("costhetaZ2", "costheta2") \
-       .Define("phi", "Phi") \
-       .Define("phi1", "Phi1") \
-       .Define("pT4l", "ZZPt") \
-       .Define("rapidity4l", "ZZy") \
-       .Define("massZ1", "Z1Mass") \
-       .Define("massZ2", "Z2Mass") \
-       .Define("weight", "weight1")   # ZX weight
+           .Define("costhetaZ2", "costheta2") \
+           .Define("phi", "Phi") \
+           .Define("phi1", "Phi1") \
+           .Define("pT4l", "ZZPt") \
+           .Define("rapidity4l", "ZZy") \
+           .Define("massZ1", "Z1Mass") \
+           .Define("massZ2", "Z2Mass") \
+           .Define("weight", "weight1")  # ZX weight
 
+    # -------------------------
+    # Inclusive histograms
+    # -------------------------
     df_SR = df.Filter("ZZMass > 105 && ZZMass < 160")
 
     fout = ROOT.TFile.Open(f"H4l_ZX_{period}_DIFF.root", "RECREATE")
@@ -363,15 +436,39 @@ def run_zx(period):
         bins = array.array('d', cfg["bins"])
         for suffix, rdf in [("_FULL", df), ("_105to160", df_SR)]:
             hname = f"{obs}_ZX{suffix}"
-
             h = rdf.Histo1D(
                 ROOT.RDF.TH1DModel(hname, hname, len(bins)-1, bins),
                 cfg["var"],
                 "weight"
             ).GetValue()
-
-            h.Scale(1.0, "width")  # divide by bin width
+            h.Scale(1.0, "width")
             h.Write()
+
+    # -------------------------
+    # Final state histograms (corrected)
+    # -------------------------
+    FINAL_STATES_ZX = {
+        "4e":    "(abs(Z1Flav)==121) && (Z2Flav==121)",
+        "4mu":   "(abs(Z1Flav)==169) && (Z2Flav==169)",
+        "2e2mu": "(abs(Z1Flav)==121) && (Z2Flav==169)",
+        "2mu2e": "(abs(Z1Flav)==169) && (Z2Flav==121)",
+    }
+
+    for fs, cut in FINAL_STATES_ZX.items():
+        df_fs = df.Filter(cut)
+        df_fs_SR = df_fs.Filter("ZZMass > 105 && ZZMass < 160")
+
+        for obs, cfg in OBSERVABLES.items():
+            bins = array.array('d', cfg["bins"])
+            for suffix, rdf in [("_FULL", df_fs), ("_105to160", df_fs_SR)]:
+                hname = f"{obs}_ZX_{fs}{suffix}"
+                h = rdf.Histo1D(
+                    ROOT.RDF.TH1DModel(hname, hname, len(bins)-1, bins),
+                    cfg["var"],
+                    "weight"
+                ).GetValue()
+                h.Scale(1.0, "width")
+                h.Write()
 
     fout.Close()
     print(f"[INFO] ZX histograms for {period} written to H4l_ZX_{period}_DIFF.root")
@@ -380,7 +477,7 @@ def run_zx(period):
 # =========================
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--periods", nargs="+", default=["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"], help="List of periods/years to run over")
+    parser.add_argument("--periods", nargs="+", default=["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"], help="List of periods/years to run over")#, "2022", "2022EE", "2023preBPix", "2023postBPix", "2024"
     parser.add_argument("--mc", action="store_true")
     parser.add_argument("--data", action="store_true")
     parser.add_argument("--zx", action="store_true")
