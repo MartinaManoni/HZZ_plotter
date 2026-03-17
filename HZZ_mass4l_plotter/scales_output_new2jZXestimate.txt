@@ -1,0 +1,98 @@
+=== Per-bin scales ===
+
+[UNDERFLOW]
+4e     signal     : 1.081
+4e     qqzz       : 1.073
+4e     ggzz       : 1.055
+4e     zjets      : 0.682
+4mu    signal     : 1.050
+4mu    qqzz       : 1.045
+4mu    ggzz       : 1.025
+4mu    zjets      : 1.079
+2e2mu  signal     : 1.075
+2e2mu  qqzz       : 1.069
+2e2mu  ggzz       : 1.052
+2e2mu  zjets      : 1.218
+
+[MINUSPITOMINUSHALFPI]
+cat4e  signal     : 1.176
+cat4e  qqzz       : 1.158
+cat4e  ggzz       : 1.153
+cat4e  zjets      : 0.654
+cat4mu signal     : 1.131
+cat4mu qqzz       : 1.187
+cat4mu ggzz       : 1.250
+cat4mu zjets      : 1.083
+cat2e2mu signal     : 1.159
+cat2e2mu qqzz       : 1.240
+cat2e2mu ggzz       : 1.214
+cat2e2mu zjets      : 1.233
+
+[MINUSHALFPITOZERO]
+cat4e  signal     : 1.166
+cat4e  qqzz       : 1.190
+cat4e  ggzz       : 1.122
+cat4e  zjets      : 0.663
+cat4mu signal     : 1.076
+cat4mu qqzz       : 1.180
+cat4mu ggzz       : 1.231
+cat4mu zjets      : 1.083
+cat2e2mu signal     : 1.088
+cat2e2mu qqzz       : 1.205
+cat2e2mu ggzz       : 1.190
+cat2e2mu zjets      : 1.230
+
+[ZEROTOHALFPI]
+cat4e  signal     : 0.805
+cat4e  qqzz       : 1.158
+cat4e  ggzz       : 0.945
+cat4e  zjets      : 0.673
+cat4mu signal     : 0.820
+cat4mu qqzz       : 1.149
+cat4mu ggzz       : 1.198
+cat4mu zjets      : 1.078
+cat2e2mu signal     : 0.799
+cat2e2mu qqzz       : 1.223
+cat2e2mu ggzz       : 1.139
+cat2e2mu zjets      : 1.225
+
+[HALFPITOPI]
+cat4e  signal     : 1.244
+cat4e  qqzz       : 1.200
+cat4e  ggzz       : 1.310
+cat4e  zjets      : 0.659
+cat4mu signal     : 1.218
+cat4mu qqzz       : 1.174
+cat4mu ggzz       : 1.201
+cat4mu zjets      : 1.081
+cat2e2mu signal     : 1.269
+cat2e2mu qqzz       : 1.214
+cat2e2mu ggzz       : 1.218
+cat2e2mu zjets      : 1.231
+
+=== Total (inclusive) scales ===
+
+4e     signal     : 1.081
+4e     qqzz       : 1.073
+4e     ggzz       : 1.055
+4e     zjets      : 0.682
+4mu    signal     : 1.050
+4mu    qqzz       : 1.045
+4mu    ggzz       : 1.025
+4mu    zjets      : 1.079
+2e2mu  signal     : 1.075
+2e2mu  qqzz       : 1.069
+2e2mu  ggzz       : 1.052
+2e2mu  zjets      : 1.218
+cat4e  signal     : 1.098
+cat4e  qqzz       : 1.177
+cat4e  ggzz       : 1.143
+cat4e  zjets      : 0.659
+cat4mu signal     : 1.066
+cat4mu qqzz       : 1.173
+cat4mu ggzz       : 1.220
+cat4mu zjets      : 1.082
+cat2e2mu signal     : 1.083
+cat2e2mu qqzz       : 1.221
+cat2e2mu ggzz       : 1.194
+cat2e2mu zjets      : 1.231
