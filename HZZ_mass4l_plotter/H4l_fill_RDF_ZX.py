@@ -73,11 +73,11 @@ DATA_PATHS = {
 }
 
 ZX_PATHS = {
-    "2022": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2022.root",
-    "2022EE": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2022EE.root",
-    "2023preBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2023preBPix.root",
-    "2023postBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2023postBPix.root",
-    "2024": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2024.root",
+    "2022": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2022_Njets_FIX.root",
+    "2022EE": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2022EE_Njets_FIX.root",
+    "2023preBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2023preBPix_Njets_FIX.root",
+    "2023postBPix": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2023postBPix_Njets_FIX.root",
+    "2024": "/afs/cern.ch/user/m/mmanoni/HZZ_plotter_CMSSW14/CMSSW_14_1_6/src/HZZ_plotter/HZZ_mass4l_plotter/ZX_results_2024_Njets_FIX.root",
 }
 
 Z_FLAVORS = {
@@ -93,6 +93,138 @@ LUMI = {
     "2023postBPix": 9.69,
     "2024": 108.82,
 }
+
+
+# Add this near the top, after importing ROOT
+ROOT.gInterpreter.Declare("""
+#include <vector>
+#include <cmath>
+
+bool pass_dR(float eta1, float phi1, float eta2, float phi2) {
+    float dphi = std::fabs(phi1 - phi2);
+    if (dphi > M_PI) dphi = 2*M_PI - dphi;
+    float deta = eta1 - eta2;
+    return std::sqrt(deta*deta + dphi*dphi) > 0.4; // typical jet-lepton cleaning
+}
+
+ROOT::VecOps::RVec<int> get_jet_idx(const std::string& year,
+                                    const ROOT::VecOps::RVec<unsigned char>& jetId,
+                                    const ROOT::VecOps::RVec<bool>& zzMask,
+                                    const ROOT::VecOps::RVec<float>& jet_pt,
+                                    const ROOT::VecOps::RVec<float>& jet_eta,
+                                    const ROOT::VecOps::RVec<float>& jet_phi,
+                                    const ROOT::VecOps::RVec<bool>& lep_zzfullsel,
+                                    const ROOT::VecOps::RVec<float>& lep_eta,
+                                    const ROOT::VecOps::RVec<float>& lep_phi,
+                                    int requiredId = 6,
+                                    float minPt = 30.0,
+                                    float maxAbsEta = 5.0)
+{
+    ROOT::VecOps::RVec<int> jet_indices_final;
+    const std::size_t njet = jet_eta.size();
+    const std::size_t nlep = lep_eta.size();
+
+    for (std::size_t i = 0; i < njet; ++i) {
+        if ((int)jetId[i] != requiredId) continue;
+        if (std::abs(jet_eta[i]) >= maxAbsEta) continue;
+
+        bool passdR = true;
+        for (std::size_t j = 0; j < nlep; ++j) {
+            if (!lep_zzfullsel[j]) continue;
+            if (!pass_dR(jet_eta[i], jet_phi[i], lep_eta[j], lep_phi[j])) {
+                passdR = false;
+                break;
+            }
+        }
+        if (!passdR) continue;
+
+        float pt_cut = minPt;
+        if ((std::abs(jet_eta[i]) >= 2.5f && std::abs(jet_eta[i]) < 3.0f) ||
+            (std::abs(jet_eta[i]) >= 3.0f && (year == "2022" || year == "2022EE" || year == "2023" || year == "2023BPix")))
+        {
+            pt_cut = 50.0f;
+        }
+
+        if (jet_pt[i] > pt_cut) jet_indices_final.push_back(i);
+    }
+
+    return jet_indices_final;
+}
+""")
+
+ROOT.gInterpreter.Declare("""
+ROOT::RVec<float> concatenate(ROOT::RVec<float> &A, ROOT::RVec<float> &B){
+    int sizeA = A.size();
+    int sizeB = B.size();
+    int sizeC = sizeA + sizeB;
+    ROOT::RVec<float> C(sizeC);
+
+    for (int i = 0; i < sizeA; ++i) {
+        C[i] = A[i];
+    }
+    for (int i = 0; i < sizeB; ++i) {
+        C[sizeA+i] = B[i];
+    }
+
+    return C;
+}
+""")
+
+ROOT.gInterpreter.Declare("""
+ROOT::RVec<short> concatenate(ROOT::RVec<int> &A, ROOT::RVec<int> &B){
+    int sizeA = A.size();
+    int sizeB = B.size();
+    int sizeC = sizeA + sizeB;
+    ROOT::RVec<float> C(sizeC);
+
+    for (int i = 0; i < sizeA; ++i) {
+        C[i] = A[i];
+    }
+    for (int i = 0; i < sizeB; ++i) {
+        C[sizeA+i] = B[i];
+    }
+
+    return C;
+}
+""")
+
+ROOT.gInterpreter.Declare("""
+ROOT::RVec<bool> concatenate(ROOT::RVec<bool> &A, ROOT::RVec<bool> &B){
+    int sizeA = A.size();
+    int sizeB = B.size();
+    int sizeC = sizeA + sizeB;
+    ROOT::RVec<float> C(sizeC);
+
+    for (int i = 0; i < sizeA; ++i) {
+        C[i] = A[i];
+    }
+    for (int i = 0; i < sizeB; ++i) {
+        C[sizeA+i] = B[i];
+    }
+
+    return C;
+}
+""")
+
+ROOT.gInterpreter.Declare("""
+ROOT::RVec<unsigned char> concatenate(ROOT::RVec<unsigned char> &A, ROOT::RVec<unsigned char> &B){
+    int sizeA = A.size();
+    int sizeB = B.size();
+    int sizeC = sizeA + sizeB;
+    ROOT::RVec<float> C(sizeC);
+
+    for (int i = 0; i < sizeA; ++i) {
+        C[i] = A[i];
+    }
+    for (int i = 0; i < sizeB; ++i) {
+        C[sizeA+i] = B[i];
+    }
+
+    return C;
+}
+""")
+
+
 
 def get_genEventSumw(input_file, maxEntriesPerSample=None):
     '''
@@ -189,7 +321,7 @@ def define_histograms(df, df_SR, samplename, isMC):
     }
 
     for ch in ["4mu", "4e", "2e2mu"]:
-        if samplename == "ZX":
+        if "ZX" in samplename:
             # Use FinState instead of Z1/Z2 flav
             finstates = CHANNEL_TO_FINSTATE[ch]
             if isinstance(finstates, list):
@@ -300,6 +432,24 @@ def run_sample(sample_name, filepaths, output_file, isMC=True):
     df_SR = df.Filter("m4l > 118 && m4l < 130")
 
     histos = define_histograms(df, df_SR, sample_name, isMC)
+    # ----------------------------
+    # Add Nj>=2 histograms
+    # ----------------------------
+    df = df.Define('electron_ZZFullSel','Electron_ZZFullSel') \
+        .Define('muon_ZZFullSel','Muon_ZZFullSel') \
+        .Define('Leptons_ZZFullSel', "concatenate(electron_ZZFullSel,muon_ZZFullSel)") \
+        .Define('lep_eta', "concatenate(Electron_eta, Muon_eta)") \
+        .Define('lep_phi', "concatenate(Electron_phi, Muon_phi)") \
+        .Define("jet_indices", f'get_jet_idx("{sample_name}", Jet_jetId, Jet_ZZMask, Jet_pt, Jet_eta, Jet_phi, Leptons_ZZFullSel, lep_eta, lep_phi)') \
+        .Define("nJets", "jet_indices.size()")
+
+    df_Nj2 = df.Filter("nJets >= 2")
+    df_SR_Nj2 = df_Nj2.Filter("m4l > 118 && m4l < 130")
+
+    histos_Nj2 = define_histograms(df_Nj2, df_SR_Nj2, f"{sample_name}_Nj2", isMC)
+    histos.update(histos_Nj2)
+    print(f"[INFO] Added histograms for {sample_name} with Nj>=2")
+
 
     output_file.cd()
     for hname, h in histos.items():
@@ -332,8 +482,18 @@ def run_zx(period):
 
     df_SR = df.Filter("m4l > 118 && m4l < 130")
 
-    fout = ROOT.TFile.Open(f"H4l_ZX_{period}_RDF.root", "RECREATE")
+    fout = ROOT.TFile.Open(f"H4l_ZX_{period}_Nj2_FIX.root", "RECREATE")
     histos = define_histograms(df, df_SR, "ZX", isMC=True)
+
+    print("df", df)
+
+    df = df.Define("nJets", 'Nj')
+
+    df_Nj2 = df.Filter("nJets >= 2")
+    df_SR_Nj2 = df_Nj2.Filter("m4l > 118 && m4l < 130")
+
+    histos_Nj2 = define_histograms(df_Nj2, df_SR_Nj2, "ZX_Nj2", isMC=True)
+    histos.update(histos_Nj2)
 
     for hname, h in histos.items():
         h_clone = ROOT.TH1F(hname, hname, h.GetValue().GetNbinsX(), h.GetValue().GetXaxis().GetXmin(), h.GetValue().GetXaxis().GetXmax())
@@ -368,7 +528,7 @@ def run_data(period):
     print(f"[INFO] Processing Data for period {period} from {len(valid_files)} files")
 
     # Open output file
-    fout = ROOT.TFile.Open(f"H4l_Data_{period}_RDF.root", "RECREATE")
+    fout = ROOT.TFile.Open(f"H4l_Data_{period}_Nj2_FIX.root", "RECREATE")
 
     # Call run_sample with the list of files
     run_sample("Data", valid_files, fout, isMC=False)
@@ -392,7 +552,7 @@ def run_mc(period):
         "ZH125", "ttH125"
     ]
 
-    fout = ROOT.TFile.Open(f"H4l_MC_{period}_RDF.root", "RECREATE")
+    fout = ROOT.TFile.Open(f"H4l_MC_{period}_Nj2_FIX.root", "RECREATE")
 
     # ------------------------------------------------
     # 1) Collect MC files
@@ -417,7 +577,7 @@ def run_mc(period):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["data", "mc", "zx", "both"], default="all")
-    parser.add_argument("--period", choices=["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"], default="2022EE")
+    parser.add_argument("--period", choices=["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"], default="2022")
     args = parser.parse_args()
 
     if args.mode == "data":

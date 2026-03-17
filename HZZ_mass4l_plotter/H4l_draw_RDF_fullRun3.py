@@ -21,44 +21,35 @@ import numpy as np
 from array import array
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
-inFilenameMC2022     = 'H4l_MC_2022_RDF.root'
-inFilenameMC2022EE   = 'H4l_MC_2022EE_RDF.root'
-inFilenameData2022   = "H4l_Data_2022_RDF.root"
-inFilenameData2022EE = "H4l_Data_2022EE_RDF.root"
-inFilenameZX2022   = "H4l_ZX_2022_RDF.root"
-inFilenameZX2022EE = "H4l_ZX_2022EE_RDF.root"
+inFilenameMC2022     = 'H4l_MC_2022_Nj2_FIX.root'
+inFilenameMC2022EE   = 'H4l_MC_2022EE_Nj2_FIX.root'
+inFilenameData2022   = "H4l_Data_2022_Nj2_FIX.root"
+inFilenameData2022EE = "H4l_Data_2022EE_Nj2_FIX.root"
+inFilenameZX2022   = "H4l_ZX_2022_Nj2_FIX.root"
+inFilenameZX2022EE = "H4l_ZX_2022EE_Nj2_FIX.root"
 
 lumi_22   = 7.98 # 1/fb
 lumi_22EE  = 26.67 # 1/fb
 
-inFilenameMC2023pre     = 'H4l_MC_2023preBPix_RDF.root'
-inFilenameMC2023pre   = 'H4l_MC_2023preBPix_RDF.root'
-inFilenameData2023pre   = "H4l_Data_2023preBPix_RDF.root"
-inFilenameData2023pre = "H4l_Data_2023preBPix_RDF.root"
-inFilenameZX2023pre   = "H4l_ZX_2023preBPix_RDF.root"
-inFilenameZX2023pre = "H4l_ZX_2023preBPix_RDF.root"
+inFilenameMC2023pre     = 'H4l_MC_2023preBPix_Nj2_FIX.root'
+inFilenameData2023pre   = "H4l_Data_2023preBPix_Nj2_FIX.root"
+inFilenameZX2023pre   = "H4l_ZX_2023preBPix_Nj2_FIX.root"
 
 lumi_23pre   = 18.06
 
-inFilenameMC2023post     = 'H4l_MC_2023postBPix_RDF.root'
-inFilenameMC2023post   = 'H4l_MC_2023postBPix_RDF.root'
-inFilenameData2023post   = "H4l_Data_2023postBPix_RDF.root"
-inFilenameData2023post = "H4l_Data_2023postBPix_RDF.root"
-inFilenameZX2023post   = "H4l_ZX_2023postBPix_RDF.root"
-inFilenameZX2023post = "H4l_ZX_2023postBPix_RDF.root"
+inFilenameMC2023post     = 'H4l_MC_2023postBPix_Nj2_FIX.root'
+inFilenameData2023post   = "H4l_Data_2023postBPix_Nj2_FIX.root"
+inFilenameZX2023post   = "H4l_ZX_2023postBPix_Nj2_FIX.root"
 
 lumi_23post  = 9.69
 
-inFilenameMC2024     = 'H4l_MC_2024_RDF.root'
-inFilenameMC2024   = 'H4l_MC_2024_RDF.root'
-inFilenameData2024   = "H4l_Data_2024_RDF.root"
-inFilenameData2024 = "H4l_Data_2024_RDF.root"
-inFilenameZX2024   = "H4l_ZX_2024_RDF.root"
-inFilenameZX2024 = "H4l_ZX_2024_RDF.root"
+inFilenameMC2024     = 'H4l_MC_2024_Nj2_FIX.root'
+inFilenameData2024   = "H4l_Data_2024_Nj2_FIX.root"
+inFilenameZX2024   = "H4l_ZX_2024_Nj2_FIX.root"
 
 lumi_24 = 108.82
 
-outFilename = "Plots_fullRun3_RDF_FINAL.root"
+outFilename = "Plots_fullRun3_Nj2_FIX_FINAL.root"
 
 ## output directory
 today = date.today()
@@ -141,7 +132,7 @@ def get_m4l_label(finalState):
         return "m_{4l} (GeV)"
 
 ######################
-def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023postZX, f2024, f2024ZX, variable="ZZmass_", version = "", finalState = 'fs_4l'):
+def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023postZX, f2024, f2024ZX, variable="ZZmass_", version = "", finalState = 'fs_4l',category=""):
     print("Stacking")
     # final state
     if(finalState == 'fs_4e'):
@@ -157,6 +148,7 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
 
     # define histo name
     name = variable + (version if variable == "ZZMass_" else "") + fs_string
+
     print("variable", variable)
     print("version", version)
     print("fs_string", fs_string)
@@ -166,10 +158,10 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     #------------EW------------------#
     #---------------------#
     # 2022
-    WWZ  = f2022.Get(name+"WWZ")
+    WWZ  = f2022.Get(name+"WWZ"+category)
     print("WWZ",name)
-    WZZ  = f2022.Get(name+"WZZ")
-    ZZZ  = f2022.Get(name+"ZZZ")
+    WZZ  = f2022.Get(name+"WZZ"+category)
+    ZZZ  = f2022.Get(name+"ZZZ"+category)
     EWSamples = [WWZ, WZZ, ZZZ]
     EW = WWZ.Clone("h_EW")
     for i in EWSamples:
@@ -178,9 +170,9 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
 
     #---------------------#
     # 2022EE
-    WWZee  = f2022EE.Get(name+"WWZ")
-    WZZee  = f2022EE.Get(name+"WZZ")
-    ZZZee  = f2022EE.Get(name+"ZZZ")
+    WWZee  = f2022EE.Get(name+"WWZ"+category)
+    WZZee  = f2022EE.Get(name+"WZZ"+category)
+    ZZZee  = f2022EE.Get(name+"ZZZ"+category)
     EWSamplesee = [WZZee, ZZZee]
     EWee = WWZee.Clone("h_EWee")
     for i in EWSamplesee:
@@ -188,9 +180,9 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     EWee.Scale(lumi_22EE*1000.)
 
     # 2023preBPix
-    WWZ23pre  = f2023.Get(name+"WWZ")
-    WZZ23pre  = f2023.Get(name+"WZZ")
-    ZZZ23pre  = f2023.Get(name+"ZZZ")
+    WWZ23pre  = f2023.Get(name+"WWZ"+category)
+    WZZ23pre  = f2023.Get(name+"WZZ"+category)
+    ZZZ23pre  = f2023.Get(name+"ZZZ"+category)
     EW23pre = WWZ23pre.Clone("h_EW23pre")
     for i in [WZZ23pre, ZZZ23pre]:
         EW23pre.Add(i,1.)
@@ -198,9 +190,9 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     EW.Add(EW23pre,1.) # add 2023preBPix
 
     # 2023postBPix
-    WWZ23post  = f2023post.Get(name+"WWZ")
-    WZZ23post  = f2023post.Get(name+"WZZ")
-    ZZZ23post  = f2023post.Get(name+"ZZZ")
+    WWZ23post  = f2023post.Get(name+"WWZ"+category)
+    WZZ23post  = f2023post.Get(name+"WZZ"+category)
+    ZZZ23post  = f2023post.Get(name+"ZZZ"+category)
     EW23post = WWZ23post.Clone("h_EW23post")
     for i in [WZZ23post, ZZZ23post]:
         EW23post.Add(i,1.)
@@ -208,9 +200,9 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     EW.Add(EW23post,1.) # add 2023postBPix
 
     # 2024
-    WWZ24  = f2024.Get(name+"WWZ")
-    WZZ24  = f2024.Get(name+"WZZ")
-    ZZZ24  = f2024.Get(name+"ZZZ")
+    WWZ24  = f2024.Get(name+"WWZ"+category)
+    WZZ24  = f2024.Get(name+"WZZ"+category)
+    ZZZ24  = f2024.Get(name+"ZZZ"+category)
     EW24 = WWZ24.Clone("h_EW24")
     for i in [WZZ24, ZZZ24]:
         EW24.Add(i,1.)
@@ -224,26 +216,26 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     
     #-----------qqZZ---------------#
     # 2022
-    ZZTo4l = f2022.Get(name+"ZZTo4l").Clone()
+    ZZTo4l = f2022.Get(name+"ZZTo4l"+category).Clone()
     ZZTo4l.Scale(lumi_22*1000.)
 
     # 2022EE
-    ZZTo4lee = f2022EE.Get(name+"ZZTo4l").Clone()
+    ZZTo4lee = f2022EE.Get(name+"ZZTo4l"+category).Clone()
     ZZTo4lee.Scale(lumi_22EE*1000.)
     ZZTo4l.Add(ZZTo4lee,1.) # full 2022
 
     # 2023preBPix
-    ZZTo4l23pre = f2023.Get(name+"ZZTo4l").Clone()
+    ZZTo4l23pre = f2023.Get(name+"ZZTo4l"+category).Clone()
     ZZTo4l23pre.Scale(lumi_23pre*1000.)
     ZZTo4l.Add(ZZTo4l23pre,1.) # add 2023preBPix
 
     # 2023postBPix
-    ZZTo4l23post = f2023post.Get(name+"ZZTo4l").Clone()
+    ZZTo4l23post = f2023post.Get(name+"ZZTo4l"+category).Clone()
     ZZTo4l23post.Scale(lumi_23post*1000.)
     ZZTo4l.Add(ZZTo4l23post,1.) # add 2023postBPix
 
     # 2024
-    ZZTo4l24 = f2024.Get(name+"ZZTo4l").Clone()
+    ZZTo4l24 = f2024.Get(name+"ZZTo4l"+category).Clone()
     ZZTo4l24.Scale(lumi_24*1000.)
     ZZTo4l.Add(ZZTo4l24,1.) # add 2024
 
@@ -252,12 +244,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     
     #-----------signal------------#
     # 2022
-    VBF125     = f2022.Get(name+"VBFH125")
-    ggH125     = f2022.Get(name+"ggH125") 
-    WplusH125  = f2022.Get(name+"WplusH125")
-    WminusH125 = f2022.Get(name+"WminusH125")
-    ZH125      = f2022.Get(name+"ZH125")
-    ttH125     = f2022.Get(name+"ttH125")
+    VBF125     = f2022.Get(name+"VBFH125"+category)
+    ggH125     = f2022.Get(name+"ggH125"+category) 
+    WplusH125  = f2022.Get(name+"WplusH125"+category)
+    WminusH125 = f2022.Get(name+"WminusH125"+category)
+    ZH125      = f2022.Get(name+"ZH125"+category)
+    ttH125     = f2022.Get(name+"ttH125"+category)
 
     signalSamples = [ggH125, WplusH125, WminusH125, ZH125, ttH125]
     signal = VBF125.Clone("h_signal")
@@ -266,12 +258,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     signal.Scale(lumi_22*1000.) 
 
     # 2022EE
-    VBF125ee     = f2022EE.Get(name+"VBFH125")
-    ggH125ee     = f2022EE.Get(name+"ggH125")
-    WplusH125ee  = f2022EE.Get(name+"WplusH125")
-    WminusH125ee = f2022EE.Get(name+"WminusH125")
-    ZH125ee      = f2022EE.Get(name+"ZH125")
-    ttH125ee     = f2022EE.Get(name+"ttH125")
+    VBF125ee     = f2022EE.Get(name+"VBFH125"+category)
+    ggH125ee     = f2022EE.Get(name+"ggH125"+category)
+    WplusH125ee  = f2022EE.Get(name+"WplusH125"+category)
+    WminusH125ee = f2022EE.Get(name+"WminusH125"+category)
+    ZH125ee      = f2022EE.Get(name+"ZH125"+category)
+    ttH125ee     = f2022EE.Get(name+"ttH125"+category)
 
     signalSamplesee = [ggH125ee, WplusH125ee, WminusH125ee, ZH125ee, ttH125ee]
     signalee = VBF125ee.Clone("h_signalee")
@@ -281,12 +273,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     signal.Add(signalee,1.) # full 2022
 
     # 2023preBPix
-    VBF125_23pre     = f2023.Get(name+"VBFH125")
-    ggH125_23pre     = f2023.Get(name+"ggH125") 
-    WplusH125_23pre  = f2023.Get(name+"WplusH125")
-    WminusH125_23pre = f2023.Get(name+"WminusH125")
-    ZH125_23pre      = f2023.Get(name+"ZH125")
-    ttH125_23pre     = f2023.Get(name+"ttH125")
+    VBF125_23pre     = f2023.Get(name+"VBFH125"+category)
+    ggH125_23pre     = f2023.Get(name+"ggH125"+category) 
+    WplusH125_23pre  = f2023.Get(name+"WplusH125"+category)
+    WminusH125_23pre = f2023.Get(name+"WminusH125"+category)
+    ZH125_23pre      = f2023.Get(name+"ZH125"+category)
+    ttH125_23pre     = f2023.Get(name+"ttH125"+category)
 
     signal23pre = VBF125_23pre.Clone("h_signal23pre")
     for i in [ggH125_23pre, WplusH125_23pre, WminusH125_23pre, ZH125_23pre, ttH125_23pre]:
@@ -295,12 +287,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     signal.Add(signal23pre,1.) # add 2023preBPix
 
     # 2023postBPix
-    VBF125_23post     = f2023post.Get(name+"VBFH125")
-    ggH125_23post     = f2023post.Get(name+"ggH125") 
-    WplusH125_23post  = f2023post.Get(name+"WplusH125")
-    WminusH125_23post = f2023post.Get(name+"WminusH125")
-    ZH125_23post      = f2023post.Get(name+"ZH125")
-    ttH125_23post     = f2023post.Get(name+"ttH125")
+    VBF125_23post     = f2023post.Get(name+"VBFH125"+category)
+    ggH125_23post     = f2023post.Get(name+"ggH125"+category) 
+    WplusH125_23post  = f2023post.Get(name+"WplusH125"+category)
+    WminusH125_23post = f2023post.Get(name+"WminusH125"+category)
+    ZH125_23post      = f2023post.Get(name+"ZH125"+category)
+    ttH125_23post     = f2023post.Get(name+"ttH125"+category)
 
     signal23post = VBF125_23post.Clone("h_signal23post")
     for i in [ggH125_23post, WplusH125_23post, WminusH125_23post, ZH125_23post, ttH125_23post]:
@@ -309,12 +301,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     signal.Add(signal23post,1.) # add 2023postBPix
 
     # 2024
-    VBF125_24     = f2024.Get(name+"VBFH125")
-    ggH125_24     = f2024.Get(name+"ggH125") 
-    WplusH125_24  = f2024.Get(name+"WplusH125")
-    WminusH125_24 = f2024.Get(name+"WminusH125")
-    ZH125_24      = f2024.Get(name+"ZH125")
-    ttH125_24     = f2024.Get(name+"ttH125")
+    VBF125_24     = f2024.Get(name+"VBFH125"+category)
+    ggH125_24     = f2024.Get(name+"ggH125"+category) 
+    WplusH125_24  = f2024.Get(name+"WplusH125"+category)
+    WminusH125_24 = f2024.Get(name+"WminusH125"+category)
+    ZH125_24      = f2024.Get(name+"ZH125"+category)
+    ttH125_24     = f2024.Get(name+"ttH125"+category)
 
     signal24 = VBF125_24.Clone("h_signal24")
     for i in [ggH125_24, WplusH125_24, WminusH125_24, ZH125_24, ttH125_24]:
@@ -328,12 +320,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     
     #------------ggTo-----------------#
     # 2022
-    ggTo4mu     = f2022.Get(name+"ggTo4mu_Contin_MCFM701") 
-    ggTo4e      = f2022.Get(name+"ggTo4e_Contin_MCFM701")
-    ggTo4tau    = f2022.Get(name+"ggTo4tau_Contin_MCFM701")
-    ggTo2e2mu   = f2022.Get(name+"ggTo2e2mu_Contin_MCFM701")
-    ggTo2e2tau  = f2022.Get(name+"ggTo2e2tau_Contin_MCFM701")
-    ggTo2mu2tau = f2022.Get(name+"ggTo2mu2tau_Contin_MCFM701")
+    ggTo4mu     = f2022.Get(name+"ggTo4mu_Contin_MCFM701"+category) 
+    ggTo4e      = f2022.Get(name+"ggTo4e_Contin_MCFM701"+category)
+    ggTo4tau    = f2022.Get(name+"ggTo4tau_Contin_MCFM701"+category)
+    ggTo2e2mu   = f2022.Get(name+"ggTo2e2mu_Contin_MCFM701"+category)
+    ggTo2e2tau  = f2022.Get(name+"ggTo2e2tau_Contin_MCFM701"+category)
+    ggTo2mu2tau = f2022.Get(name+"ggTo2mu2tau_Contin_MCFM701"+category)
 
     ggZZSamples = [ ggTo4e, ggTo4tau, ggTo2e2mu, ggTo2e2tau, ggTo2mu2tau]
     ggToZZ = ggTo4mu.Clone("h_ggTo")
@@ -342,12 +334,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     ggToZZ.Scale(lumi_22*1000.)
 
     # 2022EE
-    ggTo4muee     = f2022EE.Get(name+"ggTo4mu_Contin_MCFM701") 
-    ggTo4eee     = f2022EE.Get(name+"ggTo4e_Contin_MCFM701")
-    ggTo4tauee    = f2022EE.Get(name+"ggTo4tau_Contin_MCFM701")
-    ggTo2e2muee  = f2022EE.Get(name+"ggTo2e2mu_Contin_MCFM701")
-    ggTo2e2tauee  = f2022EE.Get(name+"ggTo2e2tau_Contin_MCFM701")
-    ggTo2mu2tauee = f2022EE.Get(name+"ggTo2mu2tau_Contin_MCFM701")
+    ggTo4muee     = f2022EE.Get(name+"ggTo4mu_Contin_MCFM701"+category) 
+    ggTo4eee     = f2022EE.Get(name+"ggTo4e_Contin_MCFM701"+category)
+    ggTo4tauee    = f2022EE.Get(name+"ggTo4tau_Contin_MCFM701"+category)
+    ggTo2e2muee  = f2022EE.Get(name+"ggTo2e2mu_Contin_MCFM701"+category)
+    ggTo2e2tauee  = f2022EE.Get(name+"ggTo2e2tau_Contin_MCFM701"+category)
+    ggTo2mu2tauee = f2022EE.Get(name+"ggTo2mu2tau_Contin_MCFM701"+category)
 
     ggZZSamplesee= [ ggTo4eee, ggTo4tauee, ggTo2e2muee, ggTo2e2tauee, ggTo2mu2tauee]
     ggToZZee = ggTo4muee.Clone("h_ggToee")
@@ -357,12 +349,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     ggToZZ.Add(ggToZZee, 1.)
 
     # 2023preBPix
-    ggTo4mu_23pre     = f2023.Get(name+"ggTo4mu_Contin_MCFM701") 
-    ggTo4e_23pre      = f2023.Get(name+"ggTo4e_Contin_MCFM701")
-    ggTo4tau_23pre    = f2023.Get(name+"ggTo4tau_Contin_MCFM701")
-    ggTo2e2mu_23pre   = f2023.Get(name+"ggTo2e2mu_Contin_MCFM701")
-    ggTo2e2tau_23pre  = f2023.Get(name+"ggTo2e2tau_Contin_MCFM701")
-    ggTo2mu2tau_23pre = f2023.Get(name+"ggTo2mu2tau_Contin_MCFM701")
+    ggTo4mu_23pre     = f2023.Get(name+"ggTo4mu_Contin_MCFM701"+category) 
+    ggTo4e_23pre      = f2023.Get(name+"ggTo4e_Contin_MCFM701"+category)
+    ggTo4tau_23pre    = f2023.Get(name+"ggTo4tau_Contin_MCFM701"+category)
+    ggTo2e2mu_23pre   = f2023.Get(name+"ggTo2e2mu_Contin_MCFM701"+category)
+    ggTo2e2tau_23pre  = f2023.Get(name+"ggTo2e2tau_Contin_MCFM701"+category)
+    ggTo2mu2tau_23pre = f2023.Get(name+"ggTo2mu2tau_Contin_MCFM701"+category)
 
     ggToZZ23pre = ggTo4mu_23pre.Clone("h_ggTo23pre")
     for i in [ggTo4e_23pre, ggTo4tau_23pre, ggTo2e2mu_23pre, ggTo2e2tau_23pre, ggTo2mu2tau_23pre]:
@@ -371,12 +363,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     ggToZZ.Add(ggToZZ23pre,1.) # add 2023preBPix
 
     # 2023postBPix
-    ggTo4mu_23post     = f2023post.Get(name+"ggTo4mu_Contin_MCFM701") 
-    ggTo4e_23post      = f2023post.Get(name+"ggTo4e_Contin_MCFM701")
-    ggTo4tau_23post    = f2023post.Get(name+"ggTo4tau_Contin_MCFM701")
-    ggTo2e2mu_23post   = f2023post.Get(name+"ggTo2e2mu_Contin_MCFM701")
-    ggTo2e2tau_23post  = f2023post.Get(name+"ggTo2e2tau_Contin_MCFM701")
-    ggTo2mu2tau_23post = f2023post.Get(name+"ggTo2mu2tau_Contin_MCFM701")
+    ggTo4mu_23post     = f2023post.Get(name+"ggTo4mu_Contin_MCFM701"+category) 
+    ggTo4e_23post      = f2023post.Get(name+"ggTo4e_Contin_MCFM701"+category)
+    ggTo4tau_23post    = f2023post.Get(name+"ggTo4tau_Contin_MCFM701"+category)
+    ggTo2e2mu_23post   = f2023post.Get(name+"ggTo2e2mu_Contin_MCFM701"+category)
+    ggTo2e2tau_23post  = f2023post.Get(name+"ggTo2e2tau_Contin_MCFM701"+category)
+    ggTo2mu2tau_23post = f2023post.Get(name+"ggTo2mu2tau_Contin_MCFM701"+category)
 
     ggToZZ23post = ggTo4mu_23post.Clone("h_ggTo23post")
     for i in [ggTo4e_23post, ggTo4tau_23post, ggTo2e2mu_23post, ggTo2e2tau_23post, ggTo2mu2tau_23post]:
@@ -385,12 +377,12 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     ggToZZ.Add(ggToZZ23post,1.) # add 2023postBPix
 
     # 2024
-    ggTo4mu_24     = f2024.Get(name+"ggTo4mu_Contin_MCFM701") 
-    ggTo4e_24      = f2024.Get(name+"ggTo4e_Contin_MCFM701")
-    ggTo4tau_24    = f2024.Get(name+"ggTo4tau_Contin_MCFM701")
-    ggTo2e2mu_24   = f2024.Get(name+"ggTo2e2mu_Contin_MCFM701")
-    ggTo2e2tau_24  = f2024.Get(name+"ggTo2e2tau_Contin_MCFM701")
-    ggTo2mu2tau_24 = f2024.Get(name+"ggTo2mu2tau_Contin_MCFM701")
+    ggTo4mu_24     = f2024.Get(name+"ggTo4mu_Contin_MCFM701"+category) 
+    ggTo4e_24      = f2024.Get(name+"ggTo4e_Contin_MCFM701"+category)
+    ggTo4tau_24    = f2024.Get(name+"ggTo4tau_Contin_MCFM701"+category)
+    ggTo2e2mu_24   = f2024.Get(name+"ggTo2e2mu_Contin_MCFM701"+category)
+    ggTo2e2tau_24  = f2024.Get(name+"ggTo2e2tau_Contin_MCFM701"+category)
+    ggTo2mu2tau_24 = f2024.Get(name+"ggTo2mu2tau_Contin_MCFM701"+category)
 
     ggToZZ24 = ggTo4mu_24.Clone("h_ggTo24")
     for i in [ggTo4e_24, ggTo4tau_24, ggTo2e2mu_24, ggTo2e2tau_24, ggTo2mu2tau_24]:
@@ -406,25 +398,25 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     ##############################
     # ZX
     # 2022
-    hzx = f2022ZX.Get(name+"ZX").Clone()
+    hzx = f2022ZX.Get(name+"ZX"+category).Clone()
     # hzx.Scale(lumi_22*1000.)
 
-    hzxee = f2022EEZX.Get(name+"ZX").Clone()
+    hzxee = f2022EEZX.Get(name+"ZX"+category).Clone()
     # hzxee.Scale(lumi_22EE*1000.)
     hzx.Add(hzxee,1.) # full 2022
 
     # 2023preBPix
-    hzx_23pre = f2023ZX.Get(name+"ZX").Clone()
+    hzx_23pre = f2023ZX.Get(name+"ZX"+category).Clone()
     # hzx_23pre.Scale(lumi_23pre*1000.)
     hzx.Add(hzx_23pre,1.) # add 2023preBPix
 
     # 2023postBPix
-    hzx_23post = f2023postZX.Get(name+"ZX").Clone()
+    hzx_23post = f2023postZX.Get(name+"ZX"+category).Clone()
     # hzx_23post.Scale(lumi_23post*1000.)
     hzx.Add(hzx_23post,1.) # add 2023postBPix
 
     # 2024
-    hzx_24 = f2024ZX.Get(name+"ZX").Clone()
+    hzx_24 = f2024ZX.Get(name+"ZX"+category).Clone()
     # hzx_24.Scale(lumi_24*1000.)
     hzx.Add(hzx_24,1.) # add 2024
 
@@ -453,7 +445,7 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
 
 
 ### Get a TGraph for data, blinded if required
-def dataGraph (f1, f2, f3, f4, f5, variable="ZZMass_", version = "", finalState = 'fs_4l', blind = True):
+def dataGraph (f1, f2, f3, f4, f5, variable="ZZMass_", version = "", finalState = 'fs_4l', blind = True,category=""):
 
     # final state
     if(finalState == 'fs_4e'):
@@ -471,11 +463,11 @@ def dataGraph (f1, f2, f3, f4, f5, variable="ZZMass_", version = "", finalState 
     name = variable + (version if variable == "ZZMass_" else "") + fs_string
     print(name)
 
-    hd1 = f1.Get(name+"Data")
-    hd2 = f2.Get(name+"Data")
-    hd3 = f3.Get(name+"Data")
-    hd4 = f4.Get(name+"Data")
-    hd5 = f5.Get(name+"Data")
+    hd1 = f1.Get(name+"Data"+category)
+    hd2 = f2.Get(name+"Data"+category)
+    hd3 = f3.Get(name+"Data"+category)
+    hd4 = f4.Get(name+"Data"+category)
+    hd5 = f5.Get(name+"Data"+category)
   
     # Combine all into one
     hd = hd1.Clone('h_data')
@@ -564,6 +556,7 @@ if __name__ == "__main__" :
     # --- plots
     finalStates = ['fs_4e', 'fs_4mu', 'fs_2e2mu', 'fs_4l']
     variables = ['ZZMass_', 'Z1Mass_', 'Z2Mass_', 'Z1Mass_SR_', 'Z2Mass_SR_']
+    categories =["","_Nj2"]
 
     # Lumi dictionary per year
     lumi_dict = {
@@ -574,173 +567,176 @@ if __name__ == "__main__" :
         '2024': lumi_24  # adjust as needed
     }
 
-    for fs in finalStates: 
-        print(f"\nProcessing final state: {fs}")
+    for cat in categories:
+        for fs in finalStates: 
+            print(f"\nProcessing final state: {fs}")
 
-        for variable in variables:
-            versions = ["2GeV_", "5GeV_", "1GeV_"] if variable == "ZZMass_" else [""]
+            for variable in variables:
+                versions = ["2GeV_", "5GeV_", "1GeV_"] if variable == "ZZMass_" else [""]
 
-            for version in versions:
-                print(f"  Variable: {variable}, version: {version if version else 'no version'}")
+                for version in versions:
+                    print(f"  Variable: {variable}, version: {version if version else 'no version'}")
 
-                # Load histograms for all years
-                HStack_var, h_list_var = Stack(
-                    fMC2022, fMC2022EE, fZX2022, fZX2022EE,
-                    fMC2023pre, fMC2023post, fZX2023pre, fZX2023post,
-                    fMC2024, fZX2024,
-                    variable=variable, version=version, finalState=fs
-                )
+                    # Load histograms for all years
+                    HStack_var, h_list_var = Stack(
+                        fMC2022, fMC2022EE, fZX2022, fZX2022EE,
+                        fMC2023pre, fMC2023post, fZX2023pre, fZX2023post,
+                        fMC2024, fZX2024,
+                        variable=variable, version=version, finalState=fs,
+                        category=cat
+                    )
 
-                # Combine data from all years
-                HData_var = dataGraph(
-                    fData2022, fData2022EE,
-                    fData2023pre, fData2023post, fData2024,
-                    variable=variable, version=version, finalState=fs,
-                    blind=(blindPlots and variable=="ZZMass_")
-                )
+                    # Combine data from all years
+                    HData_var = dataGraph(
+                        fData2022, fData2022EE,
+                        fData2023pre, fData2023post, fData2024,
+                        variable=variable, version=version, finalState=fs,
+                        blind=(blindPlots and variable=="ZZMass_"),
+                        category=cat
+                    )
 
-                # Create canvas
-                canvas_name = f"{variable}{version}_full_allYears_{fs}".replace("__", "_")
-                
-                # Create canvas
-                Canvas = ROOT.TCanvas(canvas_name, canvas_name, canvasSizeX, canvasSizeY)
-                Canvas.SetTicks()
+                    # Create canvas
+                    canvas_name = f"{variable}{version}{cat}_full_allYears_{fs}".replace("__", "_")
+                    
+                    # Create canvas
+                    Canvas = ROOT.TCanvas(canvas_name, canvas_name, canvasSizeX, canvasSizeY)
+                    Canvas.SetTicks()
 
-                # Split canvas into main pad (stack) and ratio pad
-                pad1 = ROOT.TPad("pad1", "pad1", 0, 0.3, 1, 1)   # main plot
-                pad2 = ROOT.TPad("pad2", "pad2", 0, 0, 1, 0.3)   # ratio plot
-                pad1.SetBottomMargin(0.02)
-                pad1.SetTopMargin(0.09)
-                pad2.SetTopMargin(0.05)
-                pad2.SetBottomMargin(0.4)
-                pad1.Draw()
-                pad2.Draw()
+                    # Split canvas into main pad (stack) and ratio pad
+                    pad1 = ROOT.TPad("pad1", "pad1", 0, 0.3, 1, 1)   # main plot
+                    pad2 = ROOT.TPad("pad2", "pad2", 0, 0, 1, 0.3)   # ratio plot
+                    pad1.SetBottomMargin(0.02)
+                    pad1.SetTopMargin(0.09)
+                    pad2.SetTopMargin(0.05)
+                    pad2.SetBottomMargin(0.4)
+                    pad1.Draw()
+                    pad2.Draw()
 
-                # ---------------- Main pad ----------------
-                pad1.cd()
+                    # ---------------- Main pad ----------------
+                    pad1.cd()
 
-                # Set maximum
-                xmin = ctypes.c_double(0.)
-                ymin = ctypes.c_double(0.)
-                xmax = ctypes.c_double(0.)
-                ymax = ctypes.c_double(0.)
-                HData_var.ComputeRange(xmin, ymin, xmax, ymax)
-                HStack_var.SetMaximum(math.ceil(1.1*max(HStack_var.GetMaximum(), ymax.value)))
+                    # Set maximum
+                    xmin = ctypes.c_double(0.)
+                    ymin = ctypes.c_double(0.)
+                    xmax = ctypes.c_double(0.)
+                    ymax = ctypes.c_double(0.)
+                    HData_var.ComputeRange(xmin, ymin, xmax, ymax)
+                    HStack_var.SetMaximum(math.ceil(1.1*max(HStack_var.GetMaximum(), ymax.value)))
 
-                # Draw stack
-                HStack_var.Draw("HISTO")
-                first_histo = h_list_var[0]
-                first_histo.GetXaxis().SetRangeUser(70., 500.)
+                    # Draw stack
+                    HStack_var.Draw("HISTO")
+                    first_histo = h_list_var[0]
+                    first_histo.GetXaxis().SetRangeUser(70., 500.)
 
-                # Blinding for ZZMass
-                if blindPlots and variable == "ZZMass_":
-                    bblind = ROOT.TBox(105, 0, 140, HStack_var.GetMaximum() - epsilon)
-                    bblind.SetFillColor(ROOT.kGray)
-                    bblind.SetFillStyle(3002)
-                    bblind.Draw("same")
-                    bblind2 = ROOT.TBox(300., 0, 400., HStack_var.GetMaximum() - epsilon)
-                    bblind2.SetFillColor(ROOT.kGray)
-                    bblind2.SetFillStyle(3002)
-                    bblind2.Draw("same")
+                    # Blinding for ZZMass
+                    if blindPlots and variable == "ZZMass_":
+                        bblind = ROOT.TBox(105, 0, 140, HStack_var.GetMaximum() - epsilon)
+                        bblind.SetFillColor(ROOT.kGray)
+                        bblind.SetFillStyle(3002)
+                        bblind.Draw("same")
+                        bblind2 = ROOT.TBox(300., 0, 400., HStack_var.GetMaximum() - epsilon)
+                        bblind2.SetFillColor(ROOT.kGray)
+                        bblind2.SetFillStyle(3002)
+                        bblind2.Draw("same")
 
-                # Draw data points on top
-                HData_var.Draw("samePE1")
+                    # Draw data points on top
+                    HData_var.Draw("samePE1")
 
-                # X-axis labels tweaks for ZZMass
-                if variable == "ZZMass_":
-                    HStack_var.GetXaxis().SetLabelSize(0)
-                if variable == "Z1Mass_":
-                    HStack_var.GetXaxis().SetLabelSize(0)
-                if variable == "Z2Mass_":
-                    HStack_var.GetXaxis().SetLabelSize(0)
-                    #for label in xlabels:
-                        #label.Draw()
+                    # X-axis labels tweaks for ZZMass
+                    if variable == "ZZMass_":
+                        HStack_var.GetXaxis().SetLabelSize(0)
+                    if variable == "Z1Mass_":
+                        HStack_var.GetXaxis().SetLabelSize(0)
+                    if variable == "Z2Mass_":
+                        HStack_var.GetXaxis().SetLabelSize(0)
+                        #for label in xlabels:
+                            #label.Draw()
 
-                ROOT.gPad.RedrawAxis()
+                    ROOT.gPad.RedrawAxis()
 
-                # Legend
-                legend = ROOT.TLegend(0.72, 0.60, 0.94, 0.82)
-                legend.AddEntry(HData_var, "Data", "p")
-                legend.AddEntry(h_list_var[4], "H(125)", "f")
-                legend.AddEntry(h_list_var[3], "q#bar{q}#rightarrow ZZ", "f")
-                legend.AddEntry(h_list_var[2], "gg#rightarrow ZZ", "f")
-                legend.AddEntry(h_list_var[1], "EW", "f")
-                legend.AddEntry(h_list_var[0], "Z+X", "f")
-                legend.SetFillColor(ROOT.kWhite)
-                legend.SetLineColor(ROOT.kWhite)
-                legend.SetTextFont(43)
-                legend.SetTextSize(25)
-                legend.Draw()
+                    # Legend
+                    legend = ROOT.TLegend(0.72, 0.60, 0.94, 0.82)
+                    legend.AddEntry(HData_var, "Data", "p")
+                    legend.AddEntry(h_list_var[4], "H(125)", "f")
+                    legend.AddEntry(h_list_var[3], "q#bar{q}#rightarrow ZZ", "f")
+                    legend.AddEntry(h_list_var[2], "gg#rightarrow ZZ", "f")
+                    legend.AddEntry(h_list_var[1], "EW", "f")
+                    legend.AddEntry(h_list_var[0], "Z+X", "f")
+                    legend.SetFillColor(ROOT.kWhite)
+                    legend.SetLineColor(ROOT.kWhite)
+                    legend.SetTextFont(43)
+                    legend.SetTextSize(25)
+                    legend.Draw()
 
-                # CMS / Lumi
-                CMS_lumi.writeExtraText = True
-                CMS_lumi.extraText      = "Preliminary"
-                CMS_lumi.lumi_sqrtS     = r"171 fb^{-1} (13.6 TeV)"
-                CMS_lumi.cmsTextSize    = 1
-                CMS_lumi.lumiTextSize   = 0.7
-                CMS_lumi.extraOverCmsTextSize = 0.80
-                CMS_lumi.relPosX = 0.12
-                CMS_lumi.CMS_lumi(pad1, 0, 0)
+                    # CMS / Lumi
+                    CMS_lumi.writeExtraText = True
+                    CMS_lumi.extraText      = "Preliminary"
+                    CMS_lumi.lumi_sqrtS     = r"171 fb^{-1} (13.6 TeV)"
+                    CMS_lumi.cmsTextSize    = 1
+                    CMS_lumi.lumiTextSize   = 0.7
+                    CMS_lumi.extraOverCmsTextSize = 0.80
+                    CMS_lumi.relPosX = 0.12
+                    CMS_lumi.CMS_lumi(pad1, 0, 0)
 
-                # ---------------- Ratio pad ----------------
-                pad2.cd()
+                    # ---------------- Ratio pad ----------------
+                    pad2.cd()
 
-                # Sum of MC
-                hsum = h_list_var[0].Clone("hsum")
-                for h in h_list_var[1:]:
-                    hsum.Add(h, 1.)
+                    # Sum of MC
+                    hsum = h_list_var[0].Clone("hsum")
+                    for h in h_list_var[1:]:
+                        hsum.Add(h, 1.)
 
-                # Convert data TGraph to TH1 with same binning as hsum
-                hdata_hist = TGraphToTH1MatchingBins(HData_var, hsum, "hdata_hist")
+                    # Convert data TGraph to TH1 with same binning as hsum
+                    hdata_hist = TGraphToTH1MatchingBins(HData_var, hsum, "hdata_hist")
 
-                # Create ratio
-                ratio = hdata_hist.Clone("ratio")
-                ratio.Divide(hsum)  # now safe
+                    # Create ratio
+                    ratio = hdata_hist.Clone("ratio")
+                    ratio.Divide(hsum)  # now safe
 
-                # Draw ratio
-                ratio.SetMarkerStyle(20)
-                ratio.SetTitle("")
-                ratio.GetYaxis().SetTitle("Data / MC")
-                ratio.GetYaxis().SetNdivisions(505)
-                ratio.GetYaxis().SetTitleSize(0.15)
-                ratio.GetYaxis().SetLabelSize(0.12)
-                ratio.GetYaxis().SetTitleOffset(0.35)
-                ratio.GetXaxis().SetTitleSize(0.15)
-                ratio.GetXaxis().SetLabelSize(0.12)
-                ratio.GetXaxis().SetTitle(get_m4l_label(fs))
-                ratio.SetMinimum(0.5)
-                ratio.SetMaximum(1.5)
-                ratio.SetStats(False) 
-                ratio.Draw("PE1")
+                    # Draw ratio
+                    ratio.SetMarkerStyle(20)
+                    ratio.SetTitle("")
+                    ratio.GetYaxis().SetTitle("Data / MC")
+                    ratio.GetYaxis().SetNdivisions(505)
+                    ratio.GetYaxis().SetTitleSize(0.15)
+                    ratio.GetYaxis().SetLabelSize(0.12)
+                    ratio.GetYaxis().SetTitleOffset(0.35)
+                    ratio.GetXaxis().SetTitleSize(0.15)
+                    ratio.GetXaxis().SetLabelSize(0.12)
+                    ratio.GetXaxis().SetTitle(get_m4l_label(fs))
+                    ratio.SetMinimum(0.5)
+                    ratio.SetMaximum(1.5)
+                    ratio.SetStats(False) 
+                    ratio.Draw("PE1")
 
-                # Draw horizontal black line at y=1
-                line = ROOT.TLine(ratio.GetXaxis().GetXmin(), 1., ratio.GetXaxis().GetXmax(), 1.)
-                line.SetLineColor(ROOT.kBlack)
-                line.SetLineWidth(2)
-                line.SetLineStyle(2)  # dashed line
-                line.Draw("same")
+                    # Draw horizontal black line at y=1
+                    line = ROOT.TLine(ratio.GetXaxis().GetXmin(), 1., ratio.GetXaxis().GetXmax(), 1.)
+                    line.SetLineColor(ROOT.kBlack)
+                    line.SetLineWidth(2)
+                    line.SetLineStyle(2)  # dashed line
+                    line.Draw("same")
 
-                # RMS display
-                # ---------------- Overall RMS ----------------
-                # Collect y-values (Data/MC) from the ratio histogram
-                y_vals = [ratio.GetBinContent(i) for i in range(1, ratio.GetNbinsX()+1) if ratio.GetBinContent(i) > 0]
+                    # RMS display
+                    # ---------------- Overall RMS ----------------
+                    # Collect y-values (Data/MC) from the ratio histogram
+                    y_vals = [ratio.GetBinContent(i) for i in range(1, ratio.GetNbinsX()+1) if ratio.GetBinContent(i) > 0]
 
-                if len(y_vals) > 0:
-                    mean_y = sum(y_vals) / len(y_vals)
-                    rms_value = math.sqrt(sum((y - mean_y)**2 for y in y_vals) / len(y_vals))
-                else:
-                    rms_value = 0.
+                    if len(y_vals) > 0:
+                        mean_y = sum(y_vals) / len(y_vals)
+                        rms_value = math.sqrt(sum((y - mean_y)**2 for y in y_vals) / len(y_vals))
+                    else:
+                        rms_value = 0.
 
-                # Display RMS in a box
-                rms_box = ROOT.TPaveText(0.65, 0.75, 0.90, 0.90, "NDC")
-                rms_box.SetFillColor(ROOT.kWhite)
-                rms_box.SetTextFont(42)
-                rms_box.SetTextSize(0.08)
-                rms_box.AddText(f"RMS (Data/MC) = {rms_value:.3f}")
-                rms_box.Draw()
+                    # Display RMS in a box
+                    rms_box = ROOT.TPaveText(0.65, 0.75, 0.90, 0.90, "NDC")
+                    rms_box.SetFillColor(ROOT.kWhite)
+                    rms_box.SetTextFont(42)
+                    rms_box.SetTextSize(0.08)
+                    rms_box.AddText(f"RMS (Data/MC) = {rms_value:.3f}")
+                    rms_box.Draw()
 
-                # ---------------- Save ----------------
-                Canvas.Update()
-                Canvas.Draw()
-                Canvas.Write()
-                printCanvas(Canvas, "png", path=out_dir)
+                    # ---------------- Save ----------------
+                    Canvas.Update()
+                    Canvas.Draw()
+                    Canvas.Write()
+                    printCanvas(Canvas, "png", path=out_dir)

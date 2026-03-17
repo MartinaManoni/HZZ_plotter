@@ -5,9 +5,10 @@ from math import sqrt, log
 import ROOT
 
 # Configuration
-years = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
+years = ["2022EE", "2023preBPix", "2023postBPix", "2024"]
 eos_path_template = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/FAKERATES/{}/'
 branches_ZX = [
+    "jet_idx",
     "ZZMass",
     "Z1Flav",
     "Z2Flav",
@@ -267,8 +268,8 @@ def zx():
         # Define data files per year
         if year != "2024":
             data_files_dict = {
-                "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_Data/Data_eraCD_preEE_SKIMMED.root",
-                "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_Data/Data_eraEFG_postEE_SKIMMED.root",
+                "2022": "/eos/user/m/mmanoni/test_cleaning/2022_Data/Data_eraCD_preEE_SKIMMED.root",
+                "2022EE": "/eos/user/m/mmanoni/test_cleaning/2022_Data/Data_eraEFG_postEE_SKIMMED.root",
                 "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023_Data/Data_eraC_preBPix_SKIMMED.root",
                 "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023_Data/Data_eraD_postBPix_SKIMMED.root",
             }
@@ -325,7 +326,7 @@ def zx():
         d_ZX[year] = doZX(year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE, data_files)
 
         # Save the DataFrame with weights to ROOT file
-        output_file = f"ZX_results_{year}_obs.root"
+        output_file = f"ZX_results_{year}_Njets.root"
         save_to_root(d_ZX[year], output_file)
 
         print(year, 'done')
