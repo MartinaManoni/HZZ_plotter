@@ -115,6 +115,7 @@ FINAL_STATES = [
     "4mu",
     "2e2mu",
     "2mu2e",
+    "2e2mu_com", 
 ]
 
 # =========================================================
@@ -333,7 +334,7 @@ def draw_plot(mc_hists, hzx, hdata, variable, suffix, fs, outdir):
 # =========================================================
 if __name__ == "__main__":
 
-    periods = ["2024"]
+    periods = ["2022", "2022EE", "2023preBPix","2023postBPix", "2024"]
     #"2022", "2022EE", "2023preBPix","2023postBPix", "2024"
 
     # MC files
@@ -363,7 +364,7 @@ if __name__ == "__main__":
         if os.path.exists(fname):
             data_files[p] = ROOT.TFile.Open(fname)
 
-    outdir = "plots_Obs_byfinal_state_2024"
+    outdir = "plots_Obs_byfinal_state_Run3"
     os.makedirs(outdir, exist_ok=True)
 
     for variable in OBSERVABLES:

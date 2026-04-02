@@ -117,7 +117,7 @@ def get_genEventSumw(f):
         genEventSumw += runs.genEventSumw
     return genEventSumw
 
-def compute_yields(mc_files, year, zx_file=None, m4l_min=105, m4l_max=160):
+def compute_yields(mc_files, year, zx_file=None, m4l_min=140, m4l_max=350):
     yields = {}
     lumi = LUMI[year]
 
@@ -169,7 +169,7 @@ def compute_yields(mc_files, year, zx_file=None, m4l_min=105, m4l_max=160):
     return yields
 
 
-def compute_data_yields(data_path, m4l_min=105, m4l_max=160):
+def compute_data_yields(data_path, m4l_min=140, m4l_max=350):
 
     # Allow single file or list of files
     if isinstance(data_path, list):

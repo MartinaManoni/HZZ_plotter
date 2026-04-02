@@ -98,9 +98,9 @@ def print_results(scales, total_scales, output_file="scales_output.txt"):
 
 
 if __name__ == "__main__":
-    prefit_file = "rates_prefit_2jzxestimate.log"
-    postfit_file = "rates_postfit_2jzxestimate.log"
-    output_file = "scales_output_new2jZXestimate.txt"
+    prefit_file = "rates_prefit_zxestimate_new.log"
+    postfit_file = "rates_postfit_zxestimate_new.log"
+    output_file = "scales_output_final_new_dphijj.txt"
 
     print("Reading files...")
     prefit = parse_file(prefit_file)

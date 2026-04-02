@@ -49,12 +49,12 @@ inFilenameZX2024   = "H4l_ZX_2024_Nj2_FIX.root"
 
 lumi_24 = 108.82
 
-outFilename = "Plots_fullRun3_Nj2_FIX_FINAL.root"
+outFilename = "Plots_fullRun3.root"
 
 ## output directory
 today = date.today()
 print('Creating output dir...')
-out_dir = str(today)+'_plots_fullRun3'
+out_dir = str(today)+'_plots_fullRun3_POSTFIT_FINAL_NJ2FIX'
 os.makedirs(out_dir, exist_ok=True) #check if output dir exist
 
 
@@ -90,6 +90,38 @@ ROOT.gStyle.SetLabelSize(0.04, "XYZ")
 
 canvasSizeX=1200
 canvasSizeY=900
+
+
+################
+#POSTFIT FEATURE
+
+# Postfit scale factors per category and process
+
+postfit_scales_old = {
+    "cat4e":   {"signal": 1.098, "qqzz": 1.177, "ggzz": 1.143, "zjets": 0.659},
+    "cat4mu":  {"signal": 1.066, "qqzz": 1.173, "ggzz": 1.220, "zjets": 1.082},
+    "cat2e2mu":{"signal": 1.083, "qqzz": 1.221, "ggzz": 1.194, "zjets": 1.231},
+}
+
+
+postfit_scales_new2jzxestimate = {
+    "cat4e":   {"signal": 1.151, "qqzz": 1.128, "ggzz": 1.102, "zjets": 0.863},
+    "cat4mu":  {"signal": 1.073, "qqzz": 1.053, "ggzz": 1.027, "zjets": 1.088},
+    "cat2e2mu":{"signal": 1.128, "qqzz": 1.106, "ggzz": 1.181, "zjets": 1.030},
+}
+
+def apply_postfit_scales(h_signal, h_qqzz, h_ggzz, h_zjets, fs):
+    """
+    Apply postfit scale factors to MC histograms.
+    """
+    cat_key = "cat" + fs[3:]  # Convert finalState to key: fs_4e -> cat4e
+    if cat_key not in postfit_scales_new2jzxestimate:
+        return
+    scales = postfit_scales_new2jzxestimate[cat_key]
+    h_signal.Scale(scales["signal"])
+    h_qqzz.Scale(scales["qqzz"])
+    h_ggzz.Scale(scales["ggzz"])
+    h_zjets.Scale(scales["zjets"])
 
 #####################
 
@@ -427,20 +459,25 @@ def Stack(f2022, f2022EE, f2022ZX, f2022EEZX, f2023, f2023post, f2023ZX, f2023po
     #------------------Stack----------#
     if variable == "ZZmass_":
         if version=="5GeV_" :
-            hs = ROOT.THStack("Stack_5GeV", "; m_{#it{4l}} (GeV) ; Events / 5 GeV" )
+            hs = ROOT.THStack("Stack_5GeV", "; m_{{4l}} (GeV) ; Events / 5 GeV" )
         elif version=="2GeV_" :
-            hs = ROOT.THStack("Stack_2GeV", "; m_{#it{4l}} (GeV) ; Events / 2 GeV" )
+            hs = ROOT.THStack("Stack_2GeV", "; m_{{4l}} (GeV) ; Events / 2 GeV" )
         else:
-            hs = ROOT.THStack("Stack_1GeV", "; m_{#it{4l}} (GeV) ; Events / 1 GeV" )
+            hs = ROOT.THStack("Stack_1GeV", "; m_{{4l}} (GeV) ; Events / 1 GeV" )
     else:
-        hs = ROOT.THStack(f"Stack_{variable}", f"; {variable} (GeV); Events")
+        hs = ROOT.THStack(f"Stack_{variable}", f"; {variable} (GeV); Events / 2 GeV")
 
     hs.Add(hzx,"HISTO")
     hs.Add(EW,"HISTO")
     hs.Add(ggToZZ,"HISTO")
     hs.Add(ZZTo4l,"HISTO")
     hs.Add(signal,"HISTO")
-    
+
+
+    ## Apply postfit only for ZZMass_ and Nj2 category
+    if variable == "ZZMass_" and category == "_Nj2":
+        apply_postfit_scales(signal, ZZTo4l, ggToZZ, hzx, finalState)
+
     return hs, [hzx, EW, ggToZZ, ZZTo4l, signal]
 
 
@@ -556,7 +593,7 @@ if __name__ == "__main__" :
     # --- plots
     finalStates = ['fs_4e', 'fs_4mu', 'fs_2e2mu', 'fs_4l']
     variables = ['ZZMass_', 'Z1Mass_', 'Z2Mass_', 'Z1Mass_SR_', 'Z2Mass_SR_']
-    categories =["","_Nj2"]
+    categories =["", "_Nj2"]
 
     # Lumi dictionary per year
     lumi_dict = {
@@ -568,6 +605,7 @@ if __name__ == "__main__" :
     }
 
     for cat in categories:
+        print("cat", cat)
         for fs in finalStates: 
             print(f"\nProcessing final state: {fs}")
 
@@ -623,8 +661,24 @@ if __name__ == "__main__" :
                     HData_var.ComputeRange(xmin, ymin, xmax, ymax)
                     HStack_var.SetMaximum(math.ceil(1.1*max(HStack_var.GetMaximum(), ymax.value)))
 
+
+                    #HStack_var.GetYaxis().SetTitleSize(0.07)   # bigger title
+                
+
+                    #HStack_var.GetYaxis().SetTitleOffset(1.3)
+
                     # Draw stack
                     HStack_var.Draw("HISTO")
+
+
+                    axis_hist = HStack_var.GetHistogram()
+
+                    # Y axis
+                    axis_hist.GetYaxis().SetTitleSize(0.07)
+                    axis_hist.GetYaxis().SetLabelSize(0.05)
+                    axis_hist.GetYaxis().SetTitleOffset(0.8)
+
+
                     first_histo = h_list_var[0]
                     first_histo.GetXaxis().SetRangeUser(70., 500.)
 
@@ -655,17 +709,19 @@ if __name__ == "__main__" :
                     ROOT.gPad.RedrawAxis()
 
                     # Legend
-                    legend = ROOT.TLegend(0.72, 0.60, 0.94, 0.82)
+                    legend = ROOT.TLegend(0.65, 0.40, 0.95, 0.78)
                     legend.AddEntry(HData_var, "Data", "p")
                     legend.AddEntry(h_list_var[4], "H(125)", "f")
                     legend.AddEntry(h_list_var[3], "q#bar{q}#rightarrow ZZ", "f")
                     legend.AddEntry(h_list_var[2], "gg#rightarrow ZZ", "f")
                     legend.AddEntry(h_list_var[1], "EW", "f")
                     legend.AddEntry(h_list_var[0], "Z+X", "f")
+
                     legend.SetFillColor(ROOT.kWhite)
                     legend.SetLineColor(ROOT.kWhite)
                     legend.SetTextFont(43)
-                    legend.SetTextSize(25)
+                    legend.SetTextSize(32)
+
                     legend.Draw()
 
                     # CMS / Lumi
@@ -719,21 +775,21 @@ if __name__ == "__main__" :
                     # RMS display
                     # ---------------- Overall RMS ----------------
                     # Collect y-values (Data/MC) from the ratio histogram
-                    y_vals = [ratio.GetBinContent(i) for i in range(1, ratio.GetNbinsX()+1) if ratio.GetBinContent(i) > 0]
-
-                    if len(y_vals) > 0:
-                        mean_y = sum(y_vals) / len(y_vals)
-                        rms_value = math.sqrt(sum((y - mean_y)**2 for y in y_vals) / len(y_vals))
-                    else:
-                        rms_value = 0.
-
-                    # Display RMS in a box
-                    rms_box = ROOT.TPaveText(0.65, 0.75, 0.90, 0.90, "NDC")
-                    rms_box.SetFillColor(ROOT.kWhite)
-                    rms_box.SetTextFont(42)
-                    rms_box.SetTextSize(0.08)
-                    rms_box.AddText(f"RMS (Data/MC) = {rms_value:.3f}")
-                    rms_box.Draw()
+                    #y_vals = [ratio.GetBinContent(i) for i in range(1, ratio.GetNbinsX()+1) if ratio.GetBinContent(i) > 0]
+#
+                    #if len(y_vals) > 0:
+                    #    mean_y = sum(y_vals) / len(y_vals)
+                    #    rms_value = math.sqrt(sum((y - mean_y)**2 for y in y_vals) / len(y_vals))
+                    #else:
+                    #    rms_value = 0.
+#
+                    ## Display RMS in a box
+                    #rms_box = ROOT.TPaveText(0.65, 0.75, 0.90, 0.90, "NDC")
+                    #rms_box.SetFillColor(ROOT.kWhite)
+                    #rms_box.SetTextFont(42)
+                    #rms_box.SetTextSize(0.08)
+                    #rms_box.AddText(f"RMS (Data/MC) = {rms_value:.3f}")
+                    #rms_box.Draw()
 
                     # ---------------- Save ----------------
                     Canvas.Update()

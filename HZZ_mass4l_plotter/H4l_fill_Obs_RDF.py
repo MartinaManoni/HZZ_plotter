@@ -13,10 +13,8 @@ ROOT.gROOT.SetBatch(True)
 # PATHS & LUMI
 # =========================
 MC_PATHS = {
-    "2022": "/eos/user/m/mmanoni/test_cleaning/2022_MC/",
-    #/eos/user/m/mmanoni/test_cleaning/2022_MC/
-    #/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_MC/
-    "2022EE": "/eos/user/m/mmanoni/test_cleaning/2022EE_MC/",
+    "2022": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022_MC/",
+    "2022EE": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2022EE_MC/",
     "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023preBPix_MC/",
     "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2023postBPix_MC/",
     "2024": "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_MC/",
@@ -96,6 +94,7 @@ FINAL_STATES = {
     "4mu":   "Z1Flav==-169 && Z2Flav==-169",
     "2e2mu": "Z1Flav==-121 && Z2Flav==-169",
     "2mu2e": "Z1Flav==-169 && Z2Flav==-121",
+    "2e2mu_com":"(Z1Flav==-121 && Z2Flav==-169) || (Z1Flav==-169 && Z2Flav==-121)",
 }
 
 OBSERVABLES = {
@@ -452,6 +451,7 @@ def run_zx(period):
         "4mu":   "(abs(Z1Flav)==169) && (Z2Flav==169)",
         "2e2mu": "(abs(Z1Flav)==121) && (Z2Flav==169)",
         "2mu2e": "(abs(Z1Flav)==169) && (Z2Flav==121)",
+        "2e2mu_com": "((abs(Z1Flav)==121) && (Z2Flav==169)) || ((abs(Z1Flav)==169) && (Z2Flav==121))",
     }
 
     for fs, cut in FINAL_STATES_ZX.items():
