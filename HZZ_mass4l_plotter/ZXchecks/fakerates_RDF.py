@@ -1,7 +1,13 @@
 import ROOT
-import array 
+import array
 
-# Enable multithreading (VERY important for speed)
+#TO DOs
+# Add 0 JETS
+# Print out number of numerator and denominator in each category
+# Run it for all backgrounds
+# confirm again that the original code applies the same cuts
+
+# Enable multithreading
 ROOT.EnableImplicitMT()
 
 # =========================
@@ -12,7 +18,7 @@ fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2
 df = ROOT.RDataFrame("CRZLTree/candTree", fname)
 
 # =========================
-# CRZL SELECTION (exact translation of your C++)
+# BASE SELECTION (NO Nj CUT HERE)
 # =========================
 df_sel = df.Filter("Z1Mass > 40 && Z1Mass < 120") \
            .Filter("""
@@ -21,44 +27,26 @@ df_sel = df.Filter("Z1Mass > 40 && Z1Mass < 120") \
            """) \
            .Filter("abs(LepEta[2]) <= 2.5") \
            .Filter("!(LepSIP[2] > 4 || Lepdxy[2] > 0.5 || Lepdz[2] > 1.0)") \
-           .Filter("MET <= 25") \
-           .Filter("Nj == 1")
+           .Filter("MET <= 25")
 
 # =========================
-# Define lepton-3 variables
+# Define variables
 # =========================
 df_sel = df_sel.Define("pt", "LepPt[2]") \
                .Define("eta", "abs(LepEta[2])") \
-               .Define("flav", "abs(LepLepId[2]) == 11 ? 0 : 1")  # 0=ele, 1=mu
-
-# =========================
-# Loose selection
-# =========================
-df_sel = df_sel.Define("isLoose", "pt > 5")
-
-# =========================
-# Tight selection (YOUR REAL LOGIC)
-# =========================
-df_sel = df_sel.Define(
-    "isTight",
-    """
-    LepisID[2] &&
-    (
-        abs(LepLepId[2]) == 11
-        ? true
-        : (LepCombRelIsoPF[2] < 0.35)
-    )
-    """
-)
-
-# =========================
-# Split numerator / denominator
-# =========================
-df_den_ele = df_sel.Filter("flav == 0 && isLoose")
-df_num_ele = df_sel.Filter("flav == 0 && isLoose && isTight")
-
-df_den_mu  = df_sel.Filter("flav == 1 && isLoose")
-df_num_mu  = df_sel.Filter("flav == 1 && isLoose && isTight")
+               .Define("flav", "abs(LepLepId[2]) == 11 ? 0 : 1") \
+               .Define("isLoose", "pt > 5") \
+               .Define(
+                   "isTight",
+                   """
+                   LepisID[2] &&
+                   (
+                       abs(LepLepId[2]) == 11
+                       ? true
+                       : (LepCombRelIsoPF[2] < 0.35)
+                   )
+                   """
+               )
 
 # =========================
 # Binning
@@ -66,172 +54,113 @@ df_num_mu  = df_sel.Filter("flav == 1 && isLoose && isTight")
 pt_bins = array.array('d', [5, 7, 10, 20, 30, 40, 50, 80])
 
 # =========================
-# HISTOGRAMS (FIXED CORRECTLY)
+# FUNCTION TO BUILD FR GRAPHS
 # =========================
-h_den_ele = df_den_ele.Histo1D(
-    ("h_den_ele", "Electron Denominator; pT; Events", len(pt_bins)-1, pt_bins),
-    "pt"
-)
+def make_fake_rate_graphs(df_base, nj_cut, color_ele, color_mu):
 
-h_num_ele = df_num_ele.Histo1D(
-    ("h_num_ele", "Electron Numerator; pT; Events", len(pt_bins)-1, pt_bins),
-    "pt"
-)
+    df_cut = df_base.Filter(nj_cut)
 
-h_den_mu = df_den_mu.Histo1D(
-    ("h_den_mu", "Muon Denominator; pT; Events", len(pt_bins)-1, pt_bins),
-    "pt"
-)
+    # Split
+    df_den_ele = df_cut.Filter("flav == 0 && isLoose")
+    df_num_ele = df_cut.Filter("flav == 0 && isLoose && isTight")
 
-h_num_mu = df_num_mu.Histo1D(
-    ("h_num_mu", "Muon Numerator; pT; Events", len(pt_bins)-1, pt_bins),
-    "pt"
-)
+    df_den_mu  = df_cut.Filter("flav == 1 && isLoose")
+    df_num_mu  = df_cut.Filter("flav == 1 && isLoose && isTight")
 
-# =========================
-# FORCE COMPUTATION
-# =========================
-den_e = h_den_ele.GetValue()
-num_e = h_num_ele.GetValue()
-den_m = h_den_mu.GetValue()
-num_m = h_num_mu.GetValue()
+    # Histos
+    h_den_ele = df_den_ele.Histo1D(("hde_"+nj_cut, "", len(pt_bins)-1, pt_bins), "pt")
+    h_num_ele = df_num_ele.Histo1D(("hne_"+nj_cut, "", len(pt_bins)-1, pt_bins), "pt")
 
-# =========================
-# COMPUTE FAKE RATES
-# =========================
-print("\n=== ELECTRON FAKE RATE ===")
-for i in range(1, den_e.GetNbinsX()+1):
-    fr = num_e.GetBinContent(i) / den_e.GetBinContent(i) if den_e.GetBinContent(i) > 0 else 0
-    print(f"{den_e.GetBinLowEdge(i)}-{den_e.GetBinLowEdge(i+1)}: {fr:.4f}")
+    h_den_mu = df_den_mu.Histo1D(("hdm_"+nj_cut, "", len(pt_bins)-1, pt_bins), "pt")
+    h_num_mu = df_num_mu.Histo1D(("hnm_"+nj_cut, "", len(pt_bins)-1, pt_bins), "pt")
 
-print("\n=== MUON FAKE RATE ===")
-for i in range(1, den_m.GetNbinsX()+1):
-    fr = num_m.GetBinContent(i) / den_m.GetBinContent(i) if den_m.GetBinContent(i) > 0 else 0
-    print(f"{den_m.GetBinLowEdge(i)}-{den_m.GetBinLowEdge(i+1)}: {fr:.4f}")
+    den_e = h_den_ele.GetValue()
+    num_e = h_num_ele.GetValue()
+    den_m = h_den_mu.GetValue()
+    num_m = h_num_mu.GetValue()
 
+    nbins = den_e.GetNbinsX()
 
-import ROOT
-import array
+    x = array.array('d')
+    y_e = array.array('d')
+    y_m = array.array('d')
+    ex = array.array('d')
+    ey_e = array.array('d')
+    ey_m = array.array('d')
 
-# =========================
-# Get histograms
-# =========================
-den_e = h_den_ele.GetValue()
-num_e = h_num_ele.GetValue()
+    for i in range(1, nbins + 1):
 
-den_m = h_den_mu.GetValue()
-num_m = h_num_mu.GetValue()
+        xval = den_e.GetBinCenter(i)
+        x.append(xval)
+        ex.append(0)
 
-# =========================
-# Fake rate arrays
-# =========================
-x = array.array('d')
-y_e = array.array('d')
-y_m = array.array('d')
+        # electrons
+        d = den_e.GetBinContent(i)
+        n = num_e.GetBinContent(i)
+        fr = n/d if d > 0 else 0
+        y_e.append(fr)
+        ey_e.append(ROOT.TMath.Sqrt(fr*(1-fr)/d) if d > 0 else 0)
 
-ex = array.array('d')
-ey_e = array.array('d')
-ey_m = array.array('d')
+        # muons
+        d2 = den_m.GetBinContent(i)
+        n2 = num_m.GetBinContent(i)
+        fr2 = n2/d2 if d2 > 0 else 0
+        y_m.append(fr2)
+        ey_m.append(ROOT.TMath.Sqrt(fr2*(1-fr2)/d2) if d2 > 0 else 0)
 
-# =========================
-# CANVAS for histograms
-# =========================
-c1 = ROOT.TCanvas("c1", "Num/Den distributions", 1200, 500)
-c1.Divide(2, 1)
+    g_ele = ROOT.TGraphErrors(nbins, x, y_e, ex, ey_e)
+    g_mu  = ROOT.TGraphErrors(nbins, x, y_m, ex, ey_m)
+
+    # styles
+    g_ele.SetMarkerStyle(20)
+    g_mu.SetMarkerStyle(24)
+
+    g_ele.SetMarkerColor(color_ele)
+    g_ele.SetLineColor(color_ele)
+
+    g_mu.SetMarkerColor(color_mu)
+    g_mu.SetLineColor(color_mu)
+
+    return g_ele, g_mu
 
 # =========================
-# ELECTRONS: plot num + den
+# BUILD ALL CATEGORIES
 # =========================
-c1.cd(1)
-den_e.SetLineColor(ROOT.kBlue)
-num_e.SetLineColor(ROOT.kRed)
-
-den_e.Draw("HIST")
-num_e.Draw("HIST SAME")
-
-legend = ROOT.TLegend(0.6, 0.7, 0.88, 0.88)
-legend.AddEntry(den_e, "Denominator", "l")
-legend.AddEntry(num_e, "Numerator", "l")
-legend.Draw()
+g_ele_1j, g_mu_1j = make_fake_rate_graphs(df_sel, "Nj == 1", ROOT.kRed, ROOT.kRed+2)
+g_ele_2j, g_mu_2j = make_fake_rate_graphs(df_sel, "Nj >= 2", ROOT.kBlue, ROOT.kBlue+2)
+g_ele_inc, g_mu_inc = make_fake_rate_graphs(df_sel, "Nj >= 0", ROOT.kBlack, ROOT.kGray+2)
 
 # =========================
-# MUONS: plot num + den
+# PLOT
 # =========================
-c1.cd(2)
-den_m.SetLineColor(ROOT.kBlue)
-num_m.SetLineColor(ROOT.kRed)
+c = ROOT.TCanvas("c", "Fake Rates vs Nj", 800, 600)
 
-den_m.Draw("HIST")
-num_m.Draw("HIST SAME")
+frame = c.DrawFrame(5, 0, 80, 0.4)
+frame.SetTitle("Fake Rate; p_{T} [GeV]; Fake Rate")
 
-legend2 = ROOT.TLegend(0.6, 0.7, 0.88, 0.88)
-legend2.AddEntry(den_m, "Denominator", "l")
-legend2.AddEntry(num_m, "Numerator", "l")
-legend2.Draw()
+# electrons
+g_ele_1j.Draw("P SAME")
+g_ele_2j.Draw("P SAME")
+g_ele_inc.Draw("P SAME")
 
-c1.SaveAs("num_den_distributions.png")
+# muons
+g_mu_1j.Draw("P SAME")
+g_mu_2j.Draw("P SAME")
+g_mu_inc.Draw("P SAME")
 
-# =========================
-# BUILD FAKE RATE GRAPH
-# =========================
-nbins = den_e.GetNbinsX()
+# legend
+leg = ROOT.TLegend(0.55, 0.6, 0.88, 0.88)
+leg.SetFillStyle(0)
+leg.SetBorderSize(0)
 
-for i in range(1, nbins + 1):
+leg.AddEntry(g_ele_1j, "e, N_{j} = 1", "p")
+leg.AddEntry(g_ele_2j, "e, N_{j} #geq 2", "p")
+leg.AddEntry(g_ele_inc, "e, inclusive", "p")
 
-    # bin center
-    xval = den_e.GetBinCenter(i)
-    x.append(xval)
-    ex.append(0)
+leg.AddEntry(g_mu_1j, "#mu, N_{j} = 1", "p")
+leg.AddEntry(g_mu_2j, "#mu, N_{j} #geq 2", "p")
+leg.AddEntry(g_mu_inc, "#mu, inclusive", "p")
 
-    # electron FR
-    d = den_e.GetBinContent(i)
-    n = num_e.GetBinContent(i)
+leg.Draw()
 
-    fr = n / d if d > 0 else 0
-    y_e.append(fr)
-
-    # binomial error (safe)
-    err = ROOT.TMath.Sqrt(fr * (1 - fr) / d) if d > 0 else 0
-    ey_e.append(err)
-
-    # muon FR
-    d2 = den_m.GetBinContent(i)
-    n2 = num_m.GetBinContent(i)
-
-    fr2 = n2 / d2 if d2 > 0 else 0
-    y_m.append(fr2)
-
-    err2 = ROOT.TMath.Sqrt(fr2 * (1 - fr2) / d2) if d2 > 0 else 0
-    ey_m.append(err2)
-
-# =========================
-# GRAPHS
-# =========================
-g_ele = ROOT.TGraphErrors(nbins, x, y_e, ex, ey_e)
-g_mu  = ROOT.TGraphErrors(nbins, x, y_m, ex, ey_m)
-
-g_ele.SetTitle("Electron Fake Rate; p_{T} [GeV]; Fake Rate")
-g_mu.SetTitle("Muon Fake Rate; p_{T} [GeV]; Fake Rate")
-
-g_ele.SetMarkerStyle(20)
-g_mu.SetMarkerStyle(21)
-
-g_ele.SetLineColor(ROOT.kRed)
-g_mu.SetLineColor(ROOT.kBlue)
-
-# =========================
-# DRAW FAKE RATE PLOT
-# =========================
-c2 = ROOT.TCanvas("c2", "Fake Rates", 800, 600)
-
-g_ele.Draw("AP")
-g_mu.Draw("P SAME")
-
-legend3 = ROOT.TLegend(0.6, 0.7, 0.88, 0.88)
-legend3.SetFillStyle(0) 
-legend3.SetBorderSize(0)
-legend3.AddEntry(g_ele, "Electrons", "p")
-legend3.AddEntry(g_mu, "Muons", "p")
-legend3.Draw()
-
-c2.SaveAs("fake_rates.png")
+c.SaveAs("fake_rates_vs_Nj.png")
