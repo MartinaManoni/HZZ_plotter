@@ -13,7 +13,7 @@ ROOT.EnableImplicitMT()
 # =========================
 # Input
 # =========================
-fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_MC/DYJetsToLL/ZZ4lAnalysis_SKIMMED.root"
+fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/2024_MC/WZto3LNu/ZZ4lAnalysis_SKIMMED.root"
 
 df = ROOT.RDataFrame("CRZLTree/candTree", fname)
 
@@ -88,6 +88,8 @@ def make_fake_rate_graphs(df_base, nj_cut, color_ele, color_mu):
     ey_e = array.array('d')
     ey_m = array.array('d')
 
+    print(f"\n=== Category: {nj_cut} ===")
+
     for i in range(1, nbins + 1):
 
         xval = den_e.GetBinCenter(i)
@@ -98,15 +100,26 @@ def make_fake_rate_graphs(df_base, nj_cut, color_ele, color_mu):
         d = den_e.GetBinContent(i)
         n = num_e.GetBinContent(i)
         fr = n/d if d > 0 else 0
+        err_e = ROOT.TMath.Sqrt(fr*(1-fr)/d) if d > 0 else 0
+
         y_e.append(fr)
-        ey_e.append(ROOT.TMath.Sqrt(fr*(1-fr)/d) if d > 0 else 0)
+        ey_e.append(err_e)
 
         # muons
         d2 = den_m.GetBinContent(i)
         n2 = num_m.GetBinContent(i)
         fr2 = n2/d2 if d2 > 0 else 0
+        err_m = ROOT.TMath.Sqrt(fr2*(1-fr2)/d2) if d2 > 0 else 0
+        
         y_m.append(fr2)
-        ey_m.append(ROOT.TMath.Sqrt(fr2*(1-fr2)/d2) if d2 > 0 else 0)
+        ey_m.append(err_m)
+
+        # PRINT
+        print(
+            f"Bin {i} (pt ~ {xval:.1f}): "
+            f"e: {n}/{d} = {fr:.4f} ± {err_e:.4f}, "
+            f"mu: {n2}/{d2} = {fr2:.4f} ± {err_m:.4f}"
+    )
 
     g_ele = ROOT.TGraphErrors(nbins, x, y_e, ex, ey_e)
     g_mu  = ROOT.TGraphErrors(nbins, x, y_m, ex, ey_m)
@@ -121,11 +134,20 @@ def make_fake_rate_graphs(df_base, nj_cut, color_ele, color_mu):
     g_mu.SetMarkerColor(color_mu)
     g_mu.SetLineColor(color_mu)
 
+    print("Electrons:")
+    print("  Denominator:", den_e.Integral())
+    print("  Numerator  :", num_e.Integral())
+
+    print("Muons:")
+    print("  Denominator:", den_m.Integral())
+    print("  Numerator  :", num_m.Integral())
+
     return g_ele, g_mu
 
 # =========================
 # BUILD ALL CATEGORIES
 # =========================
+g_ele_0j, g_mu_0j = make_fake_rate_graphs(df_sel, "Nj == 0", ROOT.kGreen, ROOT.kGreen+2)
 g_ele_1j, g_mu_1j = make_fake_rate_graphs(df_sel, "Nj == 1", ROOT.kRed, ROOT.kRed+2)
 g_ele_2j, g_mu_2j = make_fake_rate_graphs(df_sel, "Nj >= 2", ROOT.kBlue, ROOT.kBlue+2)
 g_ele_inc, g_mu_inc = make_fake_rate_graphs(df_sel, "Nj >= 0", ROOT.kBlack, ROOT.kGray+2)
@@ -135,15 +157,17 @@ g_ele_inc, g_mu_inc = make_fake_rate_graphs(df_sel, "Nj >= 0", ROOT.kBlack, ROOT
 # =========================
 c = ROOT.TCanvas("c", "Fake Rates vs Nj", 800, 600)
 
-frame = c.DrawFrame(5, 0, 80, 0.4)
+frame = c.DrawFrame(5, 0, 80, 1)
 frame.SetTitle("Fake Rate; p_{T} [GeV]; Fake Rate")
 
 # electrons
+g_ele_0j.Draw("P SAME")
 g_ele_1j.Draw("P SAME")
 g_ele_2j.Draw("P SAME")
 g_ele_inc.Draw("P SAME")
 
 # muons
+g_mu_0j.Draw("P SAME")
 g_mu_1j.Draw("P SAME")
 g_mu_2j.Draw("P SAME")
 g_mu_inc.Draw("P SAME")
@@ -153,14 +177,16 @@ leg = ROOT.TLegend(0.55, 0.6, 0.88, 0.88)
 leg.SetFillStyle(0)
 leg.SetBorderSize(0)
 
+leg.AddEntry(g_ele_0j, "e, N_{j} = 0", "p")
 leg.AddEntry(g_ele_1j, "e, N_{j} = 1", "p")
 leg.AddEntry(g_ele_2j, "e, N_{j} #geq 2", "p")
 leg.AddEntry(g_ele_inc, "e, inclusive", "p")
 
+leg.AddEntry(g_mu_0j, "#mu, N_{j} = 0", "p")
 leg.AddEntry(g_mu_1j, "#mu, N_{j} = 1", "p")
 leg.AddEntry(g_mu_2j, "#mu, N_{j} #geq 2", "p")
 leg.AddEntry(g_mu_inc, "#mu, inclusive", "p")
 
 leg.Draw()
 
-c.SaveAs("fake_rates_vs_Nj.png")
+c.SaveAs("fake_rates_vs_Nj_WZ_final.png")
