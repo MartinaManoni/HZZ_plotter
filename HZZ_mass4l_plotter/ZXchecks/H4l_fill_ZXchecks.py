@@ -109,7 +109,25 @@ OBSERVABLES = {
     "Nj": {
         "var": "Nj_clipped",
         "title": "N_{jets};N_{jets};Events",
-        "bins": [0,1,2,3,4, 5]
+        "bins": [0,1,2,3,4,5]
+    },
+
+    "Z1": {
+        "var": "Z1Mass",
+        "title": "m(Z1);m(Z1) [GeV];Events",
+        "bins": list(range(40, 120, 2))
+    },
+
+    "Z2": {
+        "var": "Z2Mass",
+        "title": "m(Z2);m(Z2) [GeV];Events",
+        "bins": list(range(12, 120, 2))
+    },
+
+    "ZZ": {
+        "var": "ZZMass",
+        "title": "m(ZZ);m(ZZ) [GeV];Events",
+        "bins": list(range(70, 600, 5))
     },
 
 }

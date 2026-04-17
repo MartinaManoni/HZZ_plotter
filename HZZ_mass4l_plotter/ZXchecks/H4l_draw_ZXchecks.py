@@ -9,7 +9,7 @@ ROOT.TH1.SetDefaultSumw2()
 # =========================
 # CONFIG
 # =========================
-variable = "Nj"
+variable = "Z2"
 suffixes = ["FULL", "105to160"]
 
 final_states = [
@@ -168,7 +168,7 @@ def draw(prefix, outname):
 # =========================
 # OUTPUT DIR
 # =========================
-outdir = "plots_Nj_MC_only_2024"
+outdir = f"plots_{variable}_MC_only_2024"
 os.makedirs(outdir, exist_ok=True)
 
 
@@ -183,7 +183,7 @@ for fs in final_states:
         else:
             prefix = f"{fs}_{suffix}"
 
-        draw(prefix, f"{outdir}/Nj_SR_{prefix}.png")
+        draw(prefix, f"{outdir}/{variable}_SR_{prefix}.png")
 
 
 # =========================================================
@@ -194,7 +194,7 @@ for cr in control_regions:
     # inclusive CR
     for suffix in suffixes:
         prefix = f"{cr}_{suffix}"
-        draw(prefix, f"{outdir}/Nj_{prefix}.png")
+        draw(prefix, f"{outdir}/{variable}_{prefix}.png")
 
     # CR + final states
     for fs in final_states:
@@ -203,7 +203,7 @@ for cr in control_regions:
 
         for suffix in suffixes:
             prefix = f"{cr}_{fs}_{suffix}"
-            draw(prefix, f"{outdir}/Nj_{prefix}.png")
+            draw(prefix, f"{outdir}/{variable}_{prefix}.png")
 
 
 # =========================================================
@@ -211,4 +211,4 @@ for cr in control_regions:
 # =========================================================
 for suffix in suffixes:
     prefix = f"CRZL_{suffix}"
-    draw(prefix, f"{outdir}/Nj_CRZL_{suffix}.png")
+    draw(prefix, f"{outdir}/{variable}_CRZL_{suffix}.png")
