@@ -1,5 +1,8 @@
 #!/bin/env python3
 # PLOTS FILLER - Clean Version with Data and ZX
+# :Leptons_missinghit 
+#:Leptons_iso
+#:Leptons_sip
 
 import ROOT
 import argparse
@@ -241,7 +244,17 @@ def run_sample(sample, filepath, output_file, period, isMC=True):
     df_window = df_window.Define("Nj_clipped", "Nj >= 4 ? 4 : Nj")
 
     df_CRZL = df_CRZL.Define("Nj_clipped", "Nj >= 4 ? 4 : Nj")
+
+    # Identify fake lepton flavour
+    df_CRZL = df_CRZL.Define("fake_lep_id", "abs(Leptons_id[2])")
+
+    # Define categories
+    df_CRZL_Ze  = df_CRZL.Filter("fake_lep_id == 11")
+    df_CRZL_Zmu = df_CRZL.Filter("fake_lep_id == 13")
+
     df_CRZL_window = df_CRZL.Filter("ZZMass > 105 && ZZMass < 160")
+    df_CRZL_Ze_window  = df_CRZL_Ze.Filter("ZZMass > 105 && ZZMass < 160")
+    df_CRZL_Zmu_window = df_CRZL_Zmu.Filter("ZZMass > 105 && ZZMass < 160")
 
 
     # -------------------------
@@ -284,16 +297,29 @@ def run_sample(sample, filepath, output_file, period, isMC=True):
     # -------------------------
     # ZL CR Incluive
     # -------------------------
-    histos_CRZL = define_histograms(
+    # Inclusive CRZL
+    histos.update(define_histograms(
         df_CRZL,
         df_CRZL_window,
         f"{sample}_CRZL",
         isMC
-    )
+    ))
 
-    histos.update(histos_CRZL)
+    # Z+e
+    histos.update(define_histograms(
+        df_CRZL_Ze,
+        df_CRZL_Ze_window,
+        f"{sample}_CRZL_Ze",
+        isMC
+    ))
 
-
+    # Z+mu
+    histos.update(define_histograms(
+        df_CRZL_Zmu,
+        df_CRZL_Zmu_window,
+        f"{sample}_CRZL_Zmu",
+        isMC
+    ))
 
     # -------------------------
     # Inclusive histograms
@@ -337,143 +363,31 @@ def run_sample(sample, filepath, output_file, period, isMC=True):
 # =========================
 def run_mc(period):
     path = MC_PATHS.get(period)
+    data_paths = DATA_PATHS.get(period)
+
     if not path:
         raise ValueError(f"Unknown MC period: {period}")
 
-    samples = ["DYJetsToLL","TTto2L2Nu", "WZto3LNu"]
+    samples = ["DYJetsToLL", "TTto2L2Nu", "WZto3LNu"]
 
-    fout = ROOT.TFile.Open(f"H4l_MC_{period}_CHECKS_ZX.root", "RECREATE")
+    fout = ROOT.TFile.Open(f"H4l_MCplusDATA_{period}.root", "RECREATE")
+
+    # -------------------------
+    # MC samples
+    # -------------------------
     for sample in samples:
         filename = os.path.join(path, sample, "ZZ4lAnalysis_SKIMMED.root")
         run_sample(sample, filename, fout, period, isMC=True)
-    fout.Close()
-
-# =========================
-# RUN DATA
-# =========================
-def run_data(period):
-    paths = DATA_PATHS.get(period)
-    if not paths:
-        raise ValueError(f"Unknown DATA period: {period}")
-
-    files = paths if isinstance(paths, list) else [paths]
-
-    # Build ONE dataframe with ALL files
-    df_full = ROOT.RDataFrame("ZZTree/candTree", files)
-
-    df_window = df_full.Filter("ZZMass > 105 && ZZMass < 160")
-
-    histos = {}
-
 
     # -------------------------
-    # Inclusive histograms
+    # DATA (same pipeline!)
     # -------------------------
-    histos_inc = define_histograms(
-        df_full,
-        df_window,
-        "DATA",
-        isMC=False
-    )
-
-    histos.update(histos_inc)
-
-    # -------------------------
-    # Final state histograms
-    # -------------------------
-
-    for fs, cut in FINAL_STATES.items():
-
-        df_fs_full = df_full.Filter(cut)
-        df_fs_window = df_window.Filter(cut)
-
-        histos_fs = define_histograms(
-            df_fs_full,
-            df_fs_window,
-            f"DATA_{fs}",
-            isMC=False
-        )
-
-        histos.update(histos_fs)
-
-    fout = ROOT.TFile.Open(f"H4l_Data_{period}_CHECKS_ZX.root", "RECREATE")
-    for h in histos.values():
-        hist = h.GetValue()
-        hist.Scale(1.0, "width")
-        hist.Write()
+    if data_paths:
+        files = data_paths if isinstance(data_paths, list) else [data_paths]
+        run_sample("DATA", files, fout, period, isMC=False)
 
     fout.Close()
 
-# =========================
-# RUN ZX (special treatment)
-# =========================
-
-# =========================
-# RUN ZX (corrected for final states)
-# =========================
-def run_zx(period):
-    path = ZX_PATHS.get(period)
-    if not path or not os.path.exists(path):
-        print(f"[WARNING] ZX file not found for period {period}: {path}")
-        return
-
-    df = ROOT.RDataFrame("candTree", path)
-
-    # Map columns to standard names for observables
-    df = df.Define("pT4l", "ZZPt") \
-           .Define("rapidity4l", "ZZy") \
-           .Define("massZ1", "Z1Mass") \
-           .Define("massZ2", "Z2Mass") \
-           .Define("weight", "weight1")  # ZX weight
-
-    # -------------------------
-    # Inclusive histograms
-    # -------------------------
-    df_SR = df.Filter("ZZMass > 105 && ZZMass < 160")
-
-    fout = ROOT.TFile.Open(f"H4l_ZX_{period}_CHECKS_ZX.root", "RECREATE")
-
-    for obs, cfg in OBSERVABLES.items():
-        bins = array.array('d', cfg["bins"])
-        for suffix, rdf in [("_FULL", df), ("_105to160", df_SR)]:
-            hname = f"{obs}_ZX{suffix}"
-            h = rdf.Histo1D(
-                ROOT.RDF.TH1DModel(hname, hname, len(bins)-1, bins),
-                cfg["var"],
-                "weight"
-            ).GetValue()
-            h.Scale(1.0, "width")
-            h.Write()
-
-    # -------------------------
-    # Final state histograms (corrected)
-    # -------------------------
-    FINAL_STATES_ZX = {
-        "4e":    "(abs(Z1Flav)==121) && (Z2Flav==121)",
-        "4mu":   "(abs(Z1Flav)==169) && (Z2Flav==169)",
-        "2e2mu": "(abs(Z1Flav)==121) && (Z2Flav==169)",
-        "2mu2e": "(abs(Z1Flav)==169) && (Z2Flav==121)",
-        "2e2mu_com": "((abs(Z1Flav)==121) && (Z2Flav==169)) || ((abs(Z1Flav)==169) && (Z2Flav==121))",
-    }
-
-    for fs, cut in FINAL_STATES_ZX.items():
-        df_fs = df.Filter(cut)
-        df_fs_SR = df_fs.Filter("ZZMass > 105 && ZZMass < 160")
-
-        for obs, cfg in OBSERVABLES.items():
-            bins = array.array('d', cfg["bins"])
-            for suffix, rdf in [("_FULL", df_fs), ("_105to160", df_fs_SR)]:
-                hname = f"{obs}_ZX_{fs}{suffix}"
-                h = rdf.Histo1D(
-                    ROOT.RDF.TH1DModel(hname, hname, len(bins)-1, bins),
-                    cfg["var"],
-                    "weight"
-                ).GetValue()
-                h.Scale(1.0, "width")
-                h.Write()
-
-    fout.Close()
-    print(f"[INFO] ZX histograms for {period} written to H4l_ZX_{period}_DIFF.root")
 # =========================
 # MAIN
 # =========================
@@ -481,20 +395,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--periods", nargs="+", default=["2024"], help="List of periods/years to run over")#, "2022", "2022EE", "2023preBPix", "2023postBPix", "2024"
     parser.add_argument("--mc", action="store_true")
-    parser.add_argument("--data", action="store_true")
-    parser.add_argument("--zx", action="store_true")
-    parser.add_argument("--all", action="store_true")
     args = parser.parse_args()
 
     for period in args.periods:
         print(f"Running for period: {period}")
-        if args.data:
-            run_data(period)
-        elif args.zx:
-            run_zx(period)
-        elif args.mc:
+        if args.mc:
             run_mc(period)
-        elif args.all:
-            run_mc(period)
-            run_data(period)
-            run_zx(period)
+
